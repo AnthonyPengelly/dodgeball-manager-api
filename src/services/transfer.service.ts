@@ -138,20 +138,20 @@ class TransferService {
       
       // Add kept players to the new transfer list
       if (playersToKeep.length > 0) {
-        const transferEntries = playersToKeep.map(item => ({
-          game_id: gameId,
-          player_id: item.id,
-          season: season
-        }));
-        
-        const { error: keepError } = await supabaseAdmin
-          .from('transfer_list')
-          .insert(transferEntries);
+        await Promise.all(playersToKeep.map(async item => {
+          const { error: updateSeasonError } = await supabaseAdmin
+            .from('transfer_list')
+            .update({
+              season
+            })
+            .eq('player_id', item.id)
+            .eq('game_id', gameId);
           
-        if (keepError) {
-          console.error('Error keeping previous transfer players:', keepError);
-          throw new ApiError(500, 'Failed to keep previous transfer players');
-        }
+          if (updateSeasonError) {
+            console.error('Error updating transfer listed player season:', updateSeasonError);
+            throw new ApiError(500, 'Failed to update transfer listed player season');
+          }
+        }));
       }
       
       // Calculate min and max tiers based on current season
