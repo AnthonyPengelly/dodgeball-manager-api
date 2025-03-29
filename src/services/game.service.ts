@@ -1,5 +1,5 @@
 import { supabaseAdmin, createClientFromToken } from '../utils/supabase';
-import { CurrentGameResponse, TeamWithGame, Game, CreateTeamRequest, CreateTeamResponse, CancelGameResponse, StartMainSeasonResponse } from '../types';
+import { CurrentGameResponse, TeamWithGame, Game, CreateTeamRequest, CreateTeamResponse, CancelGameResponse, StartMainSeasonResponse, Fixture } from '../types';
 import { GAME_STATUS, GAME_STAGE } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import playerService from './player.service';
@@ -251,15 +251,15 @@ class GameService {
   }
 
   /**
-   * Start the main season by changing the game stage from pre-season to regular season
+   * Start the main season for a game
    * 
-   * @param gameId The ID of the game to update
+   * @param gameId The game ID
    * @param token JWT token for authentication
-   * @returns The updated game, opponent teams, and fixtures
+   * @returns The updated game
    */
   async startMainSeason(gameId: string, token: string): Promise<StartMainSeasonResponse> {
     try {
-      // Get the current game to verify it's in pre-season
+      // Get the current game
       const { data: currentGame, error: gameError } = await createClientFromToken(token)
         .from('games')
         .select('*')
@@ -271,12 +271,12 @@ class GameService {
         throw new ApiError(404, 'Game not found');
       }
       
-      // Check if game is in the correct stage for transition
+      // Check if game is in pre-season
       if (currentGame.game_stage !== GAME_STAGE.PRE_SEASON) {
-        throw new ApiError(400, `Cannot start main season. Game is in ${currentGame.game_stage} stage.`);
+        throw new ApiError(400, 'Game is not in pre-season');
       }
       
-      // Get the user's team for this game
+      // Get the user's team
       const { data: userTeam, error: teamError } = await createClientFromToken(token)
         .from('teams')
         .select('*')
@@ -295,7 +295,7 @@ class GameService {
         token
       );
       
-      // Generate fixtures for the season
+      // Generate fixtures for the season (including opponent fixtures)
       const fixtures = await leagueService.generateFixtures(
         gameId,
         currentGame.season,

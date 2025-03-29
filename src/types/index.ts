@@ -394,6 +394,27 @@ export interface PlayMatchResponse {
   message: string;
   match: EnhancedFixture;
   match_day: number;
+  other_match?: EnhancedFixture;
+}
+
+export interface EndSeasonResponse {
+  success: boolean;
+  message: string;
+  game_ended: boolean;
+  season_completed: number;
+  next_season?: number;
+  promoted?: boolean;
+  champion?: boolean;
+  budget_update?: {
+    previous: number;
+    stadium_income: number;
+    wages_paid: number;
+    new_budget: number;
+  };
+  promoted_team?: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface StartMainSeasonResponse {

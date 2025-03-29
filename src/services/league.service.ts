@@ -162,7 +162,7 @@ class LeagueService {
       }
       
       // Create fixtures - one match against each opponent team
-      const fixtures: Partial<Fixture>[] = [];
+      const userFixtures: Partial<Fixture>[] = [];
       
       // For each opponent team, create a fixture
       opponentTeams.forEach((team, index) => {
@@ -170,7 +170,7 @@ class LeagueService {
         const isHome = Math.floor(Math.random() * 2) === 0;
         
         if (isHome) {
-          fixtures.push({
+          userFixtures.push({
             game_id: gameId,
             season,
             match_day: index + 1,
@@ -181,7 +181,7 @@ class LeagueService {
             status: 'scheduled'
           });
         } else {
-          fixtures.push({
+          userFixtures.push({
             game_id: gameId,
             season,
             match_day: index + 1,
@@ -194,18 +194,77 @@ class LeagueService {
         }
       });
       
-      // Insert the fixtures
-      const { data: insertedFixtures, error: insertError } = await supabaseAdmin
+      // Insert the user fixtures
+      const { data: insertedUserFixtures, error: insertUserError } = await supabaseAdmin
         .from('fixtures')
-        .insert(fixtures)
+        .insert(userFixtures)
         .select();
       
-      if (insertError) {
-        console.error('Error inserting fixtures:', insertError);
-        throw new ApiError(500, 'Failed to generate fixtures');
+      if (insertUserError) {
+        console.error('Error inserting user fixtures:', insertUserError);
+        throw new ApiError(500, 'Failed to generate user fixtures');
       }
       
-      return insertedFixtures as Fixture[];
+      // Generate fixtures for games between opponent teams
+      const opponentFixtures: Partial<Fixture>[] = [];
+      
+      // For each match day, create a fixture between the two teams not playing against the user
+      for (let matchDay = 1; matchDay <= opponentTeams.length; matchDay++) {
+        // Find the user's fixture for this match day
+        const userFixture = insertedUserFixtures?.find(f => f.match_day === matchDay);
+        if (!userFixture) continue;
+        
+        // Find the two teams not involved in the user's fixture
+        const teamsInUserFixture = [userFixture.home_team_id, userFixture.away_team_id];
+        const teamsNotInUserFixture = opponentTeams
+          .filter(team => !teamsInUserFixture.includes(team.id))
+          .map(team => team.id);
+        
+        // If we have exactly 2 teams not in the user's fixture, create a fixture between them
+        if (teamsNotInUserFixture.length === 2) {
+          // Randomly decide home and away
+          const isFirstTeamHome = Math.random() >= 0.5;
+          const homeTeamId = isFirstTeamHome ? teamsNotInUserFixture[0] : teamsNotInUserFixture[1];
+          const awayTeamId = isFirstTeamHome ? teamsNotInUserFixture[1] : teamsNotInUserFixture[0];
+          
+          opponentFixtures.push({
+            game_id: gameId,
+            season: season,
+            match_day: matchDay,
+            home_team_id: homeTeamId,
+            away_team_id: awayTeamId,
+            home_team_type: 'opponent',
+            away_team_type: 'opponent',
+            status: 'scheduled'
+          });
+        }
+      }
+      
+      // Insert the opponent fixtures if there are any
+      if (opponentFixtures.length > 0) {
+        const { error: insertOpponentFixturesError } = await supabaseAdmin
+          .from('fixtures')
+          .insert(opponentFixtures);
+        
+        if (insertOpponentFixturesError) {
+          console.error('Error inserting opponent fixtures:', insertOpponentFixturesError);
+          throw new ApiError(500, 'Failed to generate opponent fixtures');
+        }
+      }
+      
+      // Get all fixtures for this game and season
+      const { data: allFixtures, error: allFixturesError } = await createClientFromToken(token)
+        .from('fixtures')
+        .select('*')
+        .eq('game_id', gameId)
+        .eq('season', season);
+      
+      if (allFixturesError) {
+        console.error('Error getting all fixtures:', allFixturesError);
+        throw new ApiError(500, 'Failed to get all fixtures');
+      }
+      
+      return allFixtures as Fixture[];
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
