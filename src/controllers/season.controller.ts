@@ -175,6 +175,69 @@ class SeasonController {
     
     res.status(200).json(result);
   });
+
+  /**
+   * Get facility information for the current team
+   * @route GET /api/seasons/facility-info
+   * @access Private
+   */
+  getFacilityInfo = asyncHandler(async (req: Request, res: Response) => {
+    // Get user ID from the request (set by the auth middleware)
+    const userId = req.user?.id;
+    const token = req.headers.authorization?.split(' ')[1] || '';
+    
+    if (!userId) {
+      throw new ApiError(401, 'Unauthorized');
+    }
+    
+    // Get the current game
+    const currentGame = await gameService.getCurrentGame(userId, token);
+    
+    if (!currentGame) {
+      throw new ApiError(404, 'No active game found');
+    }
+    
+    const facilityInfo = await seasonService.getFacilityInfo(currentGame.team_id, token);
+    
+    res.status(200).json(facilityInfo);
+  });
+
+  /**
+   * Upgrade a facility (training or scouting)
+   * @route POST /api/seasons/upgrade-facility
+   * @access Private
+   */
+  upgradeFacility = asyncHandler(async (req: Request, res: Response) => {
+    // Get user ID from the request (set by the auth middleware)
+    const userId = req.user?.id;
+    const token = req.headers.authorization?.split(' ')[1] || '';
+    
+    if (!userId) {
+      throw new ApiError(401, 'Unauthorized');
+    }
+    
+    // Validate request body
+    const { facility_type } = req.body;
+    
+    if (!facility_type || !['training', 'scout', 'stadium'].includes(facility_type)) {
+      throw new ApiError(400, "facility_type must be one of: 'training', 'scout', or 'stadium'");
+    }
+    
+    // Get the current game
+    const currentGame = await gameService.getCurrentGame(userId, token);
+    
+    if (!currentGame) {
+      throw new ApiError(404, 'No active game found');
+    }
+    
+    const result = await seasonService.upgradeFacility(
+      currentGame.team_id, 
+      facility_type, 
+      token
+    );
+    
+    res.status(200).json(result);
+  });
 }
 
 export default new SeasonController();

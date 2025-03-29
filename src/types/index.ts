@@ -261,3 +261,38 @@ export type PlayerStatName =
   | 'positional_sense'
   | 'teamwork'
   | 'clutch_factor';
+
+// Facility upgrade types
+export interface FacilityInfo {
+  training_facility_level: number;
+  scout_level: number;
+  stadium_size: number;
+  training_facility_upgrade_cost: number;
+  scout_upgrade_cost: number;
+  stadium_upgrade_cost: number;
+  can_afford_training_upgrade: boolean;
+  can_afford_scout_upgrade: boolean;
+  can_afford_stadium_upgrade: boolean;
+  budget: number;
+}
+
+export interface GetFacilityInfoResponse {
+  facility: FacilityInfo;
+}
+
+export interface UpgradeFacilityRequest {
+  facility_type: 'training' | 'scout' | 'stadium';
+}
+
+export interface UpgradeFacilityResponse {
+  success: boolean;
+  message: string;
+  team: {
+    id: string;
+    name: string;
+    budget: number;
+    training_facility_level?: number;
+    scout_level?: number;
+  };
+  cost: number;
+}

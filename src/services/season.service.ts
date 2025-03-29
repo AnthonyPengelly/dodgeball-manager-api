@@ -1,7 +1,9 @@
 import { supabaseAdmin, createClientFromToken } from '../utils/supabase';
-import { Season, SeasonTrainingInfo, GetSeasonTrainingInfoResponse, SeasonScoutingInfo, GetSeasonScoutingInfoResponse, ScoutedPlayer, Player } from '../types';
+import { Season, SeasonTrainingInfo, GetSeasonTrainingInfoResponse, SeasonScoutingInfo, GetSeasonScoutingInfoResponse, ScoutedPlayer, Player, GetFacilityInfoResponse, UpgradeFacilityResponse } from '../types';
 import { TRAINING_CONSTANTS, SCOUTING_CONSTANTS } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
+import { FacilityUpgradeCalculator } from '../utils/facility-upgrade-calculator';
+import { GAME_STAGE } from '../utils/constants';
 
 class SeasonService {
   /**
@@ -354,6 +356,175 @@ class SeasonService {
       scouting_credits_available: creditsAvailable,
       scouting_credits_remaining: creditsRemaining
     };
+  }
+
+  /**
+   * Get information about team facilities and possible upgrades
+   * 
+   * @param teamId Team ID
+   * @param token JWT token
+   * @returns Facility information including current levels and upgrade costs
+   */
+  async getFacilityInfo(teamId: string, token: string): Promise<GetFacilityInfoResponse> {
+    try {
+      // Get the team information
+      const { data: team, error: teamError } = await createClientFromToken(token)
+        .from('teams')
+        .select('*')
+        .eq('id', teamId)
+        .single();
+      
+      if (teamError || !team) {
+        console.error('Error getting team:', teamError);
+        throw new ApiError(404, 'Team not found');
+      }
+      
+      // Calculate upgrade costs
+      const trainingUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.training_facility_level, 'training');
+      const scoutUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.scout_level, 'scout');
+      const stadiumUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.stadium_size, 'stadium');
+      
+      // Check if the team can afford upgrades
+      const canAffordTraining = team.budget >= trainingUpgradeCost && trainingUpgradeCost > 0;
+      const canAffordScout = team.budget >= scoutUpgradeCost && scoutUpgradeCost > 0;
+      const canAffordStadium = team.budget >= stadiumUpgradeCost && stadiumUpgradeCost > 0;
+      
+      return {
+        facility: {
+          training_facility_level: team.training_facility_level,
+          scout_level: team.scout_level,
+          stadium_size: team.stadium_size,
+          training_facility_upgrade_cost: trainingUpgradeCost,
+          scout_upgrade_cost: scoutUpgradeCost,
+          stadium_upgrade_cost: stadiumUpgradeCost,
+          can_afford_training_upgrade: canAffordTraining,
+          can_afford_scout_upgrade: canAffordScout,
+          can_afford_stadium_upgrade: canAffordStadium,
+          budget: team.budget
+        }
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      console.error('Error in getFacilityInfo:', error);
+      throw new ApiError(500, 'Failed to get facility information');
+    }
+  }
+  
+  /**
+   * Upgrade a team's facility (training or scouting)
+   * 
+   * @param teamId Team ID
+   * @param facilityType Type of facility to upgrade ('training', 'scout', or 'stadium')
+   * @param token JWT token
+   * @returns Response with updated team information
+   */
+  async upgradeFacility(teamId: string, facilityType: 'training' | 'scout' | 'stadium', token: string): Promise<UpgradeFacilityResponse> {
+    try {
+      // Get the team and game information
+      const { data: team, error: teamError } = await createClientFromToken(token)
+        .from('teams')
+        .select(`
+          *,
+          games:game_id (
+            id,
+            game_stage
+          )
+        `)
+        .eq('id', teamId)
+        .single();
+      
+      if (teamError || !team) {
+        console.error('Error getting team:', teamError);
+        throw new ApiError(404, 'Team not found');
+      }
+      
+      // Extract game data
+      const gameData = team.games as { id: string; game_stage: string; } | { id: string; game_stage: string; }[];
+      
+      // Validate the game is in the pre_season stage
+      let isPreseason = false;
+      
+      if (Array.isArray(gameData)) {
+        isPreseason = gameData.length > 0 && gameData[0].game_stage === GAME_STAGE.PRE_SEASON;
+      } else {
+        isPreseason = gameData.game_stage === GAME_STAGE.PRE_SEASON;
+      }
+      
+      if (!isPreseason) {
+        throw new ApiError(400, 'Facility upgrades can only be done during the pre-season');
+      }
+      
+      // Determine which facility to upgrade and calculate cost
+      let currentLevel: number;
+      let fieldToUpdate: string;
+      
+      if (facilityType === 'training') {
+        currentLevel = team.training_facility_level;
+        fieldToUpdate = 'training_facility_level';
+      } else if (facilityType === 'scout') {
+        currentLevel = team.scout_level;
+        fieldToUpdate = 'scout_level';
+      } else {
+        currentLevel = team.stadium_size;
+        fieldToUpdate = 'stadium_size';
+      }
+      
+      // Check if the facility can be upgraded
+      const upgradeCheck = FacilityUpgradeCalculator.canUpgrade(currentLevel, team.budget, facilityType);
+      
+      if (!upgradeCheck.canUpgrade) {
+        throw new ApiError(400, upgradeCheck.reason || 'Cannot upgrade facility');
+      }
+      
+      // Calculate the new budget after upgrade
+      const newBudget = team.budget - upgradeCheck.cost!;
+      const newLevel = currentLevel + 1;
+      
+      // Update the team record
+      const { data: updatedTeam, error: updateError } = await supabaseAdmin
+        .from('teams')
+        .update({ 
+          [fieldToUpdate]: newLevel,
+          budget: newBudget
+        })
+        .eq('id', teamId)
+        .select()
+        .single();
+      
+      if (updateError) {
+        console.error('Error upgrading facility:', updateError);
+        throw new ApiError(500, 'Failed to upgrade facility');
+      }
+      
+      let facilityName: string;
+      if (facilityType === 'training') {
+        facilityName = 'Training Facility';
+      } else if (facilityType === 'scout') {
+        facilityName = 'Scouting Department';
+      } else {
+        facilityName = 'Stadium';
+      }
+      
+      return {
+        success: true,
+        message: `Successfully upgraded ${facilityName} to level ${newLevel}`,
+        team: {
+          id: updatedTeam.id,
+          name: updatedTeam.name,
+          budget: updatedTeam.budget,
+          [fieldToUpdate]: updatedTeam[fieldToUpdate]
+        },
+        cost: upgradeCheck.cost!
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      console.error('Error in upgradeFacility:', error);
+      throw new ApiError(500, 'Failed to upgrade facility');
+    }
   }
 }
 

@@ -247,4 +247,122 @@ router.post('/scout', authMiddleware, seasonController.scoutPlayers);
  */
 router.post('/purchase', authMiddleware, seasonController.purchaseScoutedPlayer);
 
+/**
+ * @swagger
+ * /api/seasons/facility-info:
+ *   get:
+ *     summary: Get information about team facilities
+ *     tags: [Seasons]
+ *     description: Retrieves information about the team's facilities including current levels and upgrade costs
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Facility information retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 facility:
+ *                   type: object
+ *                   properties:
+ *                     training_facility_level:
+ *                       type: integer
+ *                       description: Current level of the training facility (1-5)
+ *                     scout_level:
+ *                       type: integer
+ *                       description: Current level of the scouting department (1-5)
+ *                     stadium_size:
+ *                       type: integer
+ *                       description: Current size/level of the stadium (1-5)
+ *                     training_facility_upgrade_cost:
+ *                       type: integer
+ *                       description: Cost to upgrade the training facility to the next level
+ *                     scout_upgrade_cost:
+ *                       type: integer
+ *                       description: Cost to upgrade the scouting department to the next level
+ *                     stadium_upgrade_cost:
+ *                       type: integer
+ *                       description: Cost to upgrade the stadium to the next level
+ *                     can_afford_training_upgrade:
+ *                       type: boolean
+ *                       description: Whether the team can afford to upgrade the training facility
+ *                     can_afford_scout_upgrade:
+ *                       type: boolean
+ *                       description: Whether the team can afford to upgrade the scouting department
+ *                     can_afford_stadium_upgrade:
+ *                       type: boolean
+ *                       description: Whether the team can afford to upgrade the stadium
+ *                     budget:
+ *                       type: integer
+ *                       description: Current team budget
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Team or game not found
+ */
+router.get('/facility-info', authMiddleware, seasonController.getFacilityInfo);
+
+/**
+ * @swagger
+ * /api/seasons/upgrade-facility:
+ *   post:
+ *     summary: Upgrade a team facility
+ *     tags: [Seasons]
+ *     description: Upgrades a team facility (training, scouting, or stadium) to the next level
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - facility_type
+ *             properties:
+ *               facility_type:
+ *                 type: string
+ *                 enum: [training, scout, stadium]
+ *                 description: Type of facility to upgrade
+ *     responses:
+ *       200:
+ *         description: Facility upgraded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   description: Whether the upgrade was successful
+ *                 message:
+ *                   type: string
+ *                   description: Success message
+ *                 team:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       format: uuid
+ *                       description: Team ID
+ *                     name:
+ *                       type: string
+ *                       description: Team name
+ *                     budget:
+ *                       type: integer
+ *                       description: Updated team budget after upgrade
+ *                 cost:
+ *                   type: integer
+ *                   description: Cost of the upgrade
+ *       400:
+ *         description: Invalid request, insufficient funds, or not in pre-season
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Team or game not found
+ */
+router.post('/upgrade-facility', authMiddleware, seasonController.upgradeFacility);
+
 export default router;

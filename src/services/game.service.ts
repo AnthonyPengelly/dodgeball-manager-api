@@ -93,7 +93,7 @@ class GameService {
         .insert({
           season: 1,
           match_day: 0,
-          status: GAME_STATUS.PENDING,
+          status: GAME_STATUS.IN_PROGRESS,
           game_stage: GAME_STAGE.DRAFT
         })
         .select()
