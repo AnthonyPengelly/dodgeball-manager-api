@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS games (
   season INTEGER NOT NULL DEFAULT 1,
   match_day INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
+  game_stage TEXT NOT NULL DEFAULT 'draft' CHECK (game_stage IN ('draft', 'pre_season', 'regular_season', 'post_season', 'off_season')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -16,7 +17,7 @@ CREATE TABLE IF NOT EXISTS games (
 CREATE TABLE IF NOT EXISTS teams (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  budget INTEGER NOT NULL DEFAULT 1000,
+  budget INTEGER NOT NULL DEFAULT 100,
   owner_id UUID NOT NULL REFERENCES auth.users(id),
   game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
   stadium_size INTEGER NOT NULL DEFAULT 1,

@@ -1,6 +1,6 @@
 import { supabaseAdmin, createClientFromToken } from '../utils/supabase';
 import { CurrentGameResponse, TeamWithGame, Game, CreateTeamRequest, CreateTeamResponse, CancelGameResponse } from '../types';
-import { GAME_STATUS } from '../utils/constants';
+import { GAME_STATUS, GAME_STAGE } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import playerService from './player.service';
 
@@ -27,7 +27,8 @@ class GameService {
             id,
             season,
             match_day,
-            status
+            status,
+            game_stage
           )
         `)
         .eq('owner_id', userId)
@@ -57,6 +58,7 @@ class GameService {
         game_season: game.season,
         game_match_day: game.match_day,
         game_status: game.status,
+        game_stage: game.game_stage,
         team_id: team.id,
         team_name: team.name
       };
@@ -91,7 +93,8 @@ class GameService {
         .insert({
           season: 1,
           match_day: 0,
-          status: GAME_STATUS.PENDING
+          status: GAME_STATUS.PENDING,
+          game_stage: GAME_STAGE.DRAFT
         })
         .select()
         .single();
@@ -111,7 +114,7 @@ class GameService {
           stadium_size: 1, 
           training_facility_level: 1,
           scout_level: 1,
-          budget: 1000 
+          budget: 100 
         })
         .select()
         .single();
@@ -138,7 +141,8 @@ class GameService {
         game_id: newGame.id,
         game_season: newGame.season,
         game_match_day: newGame.match_day,
-        game_status: newGame.status
+        game_status: newGame.status,
+        game_stage: newGame.game_stage
       };
     } catch (error) {
       console.error('GameService.createTeam error:', error);

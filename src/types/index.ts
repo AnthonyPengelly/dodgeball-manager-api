@@ -16,9 +16,12 @@ export interface Game {
   season: number;
   match_day: number;
   status: 'pending' | 'in_progress' | 'completed';
+  game_stage: GameStage;
   created_at?: string;
   updated_at?: string;
 }
+
+export type GameStage = 'draft' | 'pre_season' | 'regular_season' | 'post_season' | 'off_season';
 
 // Supabase join response type
 // Supabase returns joined records as an array, even when there's just one item
@@ -33,6 +36,7 @@ export interface CurrentGameResponse {
   game_season: number;
   game_match_day: number;
   game_status: string;
+  game_stage: GameStage;
   team_id: string;
   team_name: string;
 }
@@ -60,6 +64,7 @@ export interface CreateTeamResponse {
   game_season: number;
   game_match_day: number;
   game_status: string;
+  game_stage: GameStage;
 }
 
 // Response for game cancellation
@@ -128,5 +133,24 @@ export interface PlayerPotentialStats {
 }
 
 export interface GetDraftPlayersResponse {
+  players: Player[];
+}
+
+// Request for completing the draft
+export interface CompleteDraftRequest {
+  game_id: string;
+  player_ids: string[];
+}
+
+// Response for completing the draft
+export interface CompleteDraftResponse {
+  success: boolean;
+  message: string;
+  team_id: string;
+  selected_players: Player[];
+}
+
+// Response for getting the team squad
+export interface GetSquadResponse {
   players: Player[];
 }

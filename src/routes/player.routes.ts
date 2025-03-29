@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDraftPlayers } from '../controllers/player.controller';
+import { getDraftPlayers, completeDraft, getSquad } from '../controllers/player.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -122,5 +122,87 @@ const router = Router();
  *         description: Server error
  */
 router.get('/draft', authMiddleware, getDraftPlayers);
+
+/**
+ * @swagger
+ * /api/players/draft/complete:
+ *   post:
+ *     summary: Complete the draft by selecting players for the team
+ *     tags: [Players]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - player_ids
+ *             properties:
+ *               player_ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 description: Array of player IDs to select for the team (must be exactly 8 players)
+ *     responses:
+ *       200:
+ *         description: Draft completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 team_id:
+ *                   type: string
+ *                   format: uuid
+ *                 selected_players:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Player'
+ *       400:
+ *         description: Invalid request or game not in draft stage
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: No active game found
+ *       500:
+ *         description: Server error
+ */
+router.post('/draft/complete', authMiddleware, completeDraft);
+
+/**
+ * @swagger
+ * /api/players/squad:
+ *   get:
+ *     summary: Get the squad (team players) for the current team
+ *     tags: [Players]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of players in the team's squad
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 players:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Player'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: No active game found
+ *       500:
+ *         description: Server error
+ */
+router.get('/squad', authMiddleware, getSquad);
 
 export default router;
