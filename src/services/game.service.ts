@@ -1,8 +1,9 @@
 import { supabaseAdmin, createClientFromToken } from '../utils/supabase';
-import { CurrentGameResponse, TeamWithGame, Game, CreateTeamRequest, CreateTeamResponse, CancelGameResponse } from '../types';
+import { CurrentGameResponse, TeamWithGame, Game, CreateTeamRequest, CreateTeamResponse, CancelGameResponse, StartMainSeasonResponse } from '../types';
 import { GAME_STATUS, GAME_STAGE } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import playerService from './player.service';
+import leagueService from './league.service';
 
 class GameService {
   /**
@@ -246,6 +247,89 @@ class GameService {
         throw error;
       }
       throw new Error('Failed to cancel game');
+    }
+  }
+
+  /**
+   * Start the main season by changing the game stage from pre-season to regular season
+   * 
+   * @param gameId The ID of the game to update
+   * @param token JWT token for authentication
+   * @returns The updated game, opponent teams, and fixtures
+   */
+  async startMainSeason(gameId: string, token: string): Promise<StartMainSeasonResponse> {
+    try {
+      // Get the current game to verify it's in pre-season
+      const { data: currentGame, error: gameError } = await createClientFromToken(token)
+        .from('games')
+        .select('*')
+        .eq('id', gameId)
+        .single();
+        
+      if (gameError || !currentGame) {
+        console.error('Error getting game:', gameError);
+        throw new ApiError(404, 'Game not found');
+      }
+      
+      // Check if game is in the correct stage for transition
+      if (currentGame.game_stage !== GAME_STAGE.PRE_SEASON) {
+        throw new ApiError(400, `Cannot start main season. Game is in ${currentGame.game_stage} stage.`);
+      }
+      
+      // Get the user's team for this game
+      const { data: userTeam, error: teamError } = await createClientFromToken(token)
+        .from('teams')
+        .select('*')
+        .eq('game_id', gameId)
+        .single();
+        
+      if (teamError || !userTeam) {
+        console.error('Error getting team:', teamError);
+        throw new ApiError(404, 'Team not found');
+      }
+      
+      // Generate opponent teams for the season
+      const opponentTeams = await leagueService.generateOpponentTeams(
+        gameId, 
+        currentGame.season, 
+        token
+      );
+      
+      // Generate fixtures for the season
+      const fixtures = await leagueService.generateFixtures(
+        gameId,
+        currentGame.season,
+        userTeam.id,
+        opponentTeams,
+        token
+      );
+      
+      // Update the game stage to regular season
+      const { data: updatedGame, error: updateError } = await supabaseAdmin
+        .from('games')
+        .update({ game_stage: GAME_STAGE.REGULAR_SEASON })
+        .eq('id', gameId)
+        .select()
+        .single();
+        
+      if (updateError) {
+        console.error('Error updating game stage:', updateError);
+        throw new ApiError(500, 'Failed to start main season');
+      }
+      
+      return {
+        success: true,
+        message: 'Successfully started the main season',
+        game: updatedGame,
+        fixtures,
+        opponent_teams: opponentTeams
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      console.error('Error in startMainSeason:', error);
+      throw new ApiError(500, 'Failed to start main season');
     }
   }
 }

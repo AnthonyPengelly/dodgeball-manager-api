@@ -101,6 +101,49 @@ CREATE TABLE IF NOT EXISTS transfer_list (
   CONSTRAINT unique_player_in_transfer_list UNIQUE (player_id)
 );
 
+-- Opponent teams table
+CREATE TABLE IF NOT EXISTS opponent_teams (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  name VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  
+  -- Add constraints
+  CONSTRAINT unique_opponent_team_per_game_season UNIQUE (game_id, name)
+);
+
+-- Season opponent teams join table
+CREATE TABLE IF NOT EXISTS season_opponent_teams (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  season INT NOT NULL,
+  opponent_team_id UUID NOT NULL REFERENCES opponent_teams(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  
+  -- Add constraints
+  CONSTRAINT unique_opponent_team_per_season UNIQUE (game_id, season, opponent_team_id)
+);
+
+-- Fixtures table
+CREATE TABLE IF NOT EXISTS fixtures (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  season INT NOT NULL,
+  match_day INT NOT NULL,
+  home_team_id UUID NOT NULL,
+  away_team_id UUID NOT NULL,
+  home_team_type VARCHAR(20) NOT NULL, -- 'user' or 'opponent'
+  away_team_type VARCHAR(20) NOT NULL, -- 'user' or 'opponent'
+  home_score INT,
+  away_score INT,
+  status VARCHAR(20) NOT NULL DEFAULT 'scheduled', -- 'scheduled', 'completed'
+  played_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  
+  -- Add constraints
+  CONSTRAINT unique_fixture_per_game_season_matchday UNIQUE (game_id, season, match_day, home_team_id, away_team_id)
+);
+
 -- Add RLS (Row Level Security) policies for data access control
 -- Enable RLS on tables
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
@@ -108,6 +151,9 @@ ALTER TABLE games ENABLE ROW LEVEL SECURITY;
 ALTER TABLE players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE seasons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transfer_list ENABLE ROW LEVEL SECURITY;
+ALTER TABLE opponent_teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fixtures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE season_opponent_teams ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
 -- Teams: users can only see and modify their own teams
@@ -133,6 +179,24 @@ CREATE POLICY seasons_user_policy ON seasons
     SELECT id FROM teams WHERE owner_id = auth.uid()
   ));
 
+-- Opponent teams: users can only see opponent teams in games they have teams in
+CREATE POLICY opponent_teams_user_policy ON opponent_teams
+  USING (game_id IN (
+    SELECT game_id FROM teams WHERE owner_id = auth.uid()
+  ));
+
+-- Season opponent teams: users can only see season opponent teams in games they have teams in
+CREATE POLICY season_opponent_teams_user_policy ON season_opponent_teams
+  USING (game_id IN (
+    SELECT game_id FROM teams WHERE owner_id = auth.uid()
+  ));
+
+-- Fixtures: users can only see fixtures in games they have teams in
+CREATE POLICY fixtures_user_policy ON fixtures
+  USING (game_id IN (
+    SELECT game_id FROM teams WHERE owner_id = auth.uid()
+  ));
+
 -- Create policy to allow users to view transfer list for their games
 CREATE POLICY transfer_list_select_policy ON transfer_list 
   FOR SELECT 
@@ -148,3 +212,9 @@ CREATE POLICY transfer_list_select_policy ON transfer_list
 CREATE INDEX players_game_id_idx ON players(game_id);
 CREATE INDEX players_status_idx ON players(status);
 CREATE INDEX idx_transfer_list_game_season ON transfer_list (game_id, season);
+CREATE INDEX idx_opponent_teams_game ON opponent_teams (game_id);
+CREATE INDEX idx_fixtures_game_season ON fixtures (game_id, season);
+CREATE INDEX idx_fixtures_home_team ON fixtures (home_team_id);
+CREATE INDEX idx_fixtures_away_team ON fixtures (away_team_id);
+CREATE INDEX idx_season_opponent_teams_game_season ON season_opponent_teams (game_id, season);
+CREATE INDEX idx_season_opponent_teams_opponent_team ON season_opponent_teams (opponent_team_id);

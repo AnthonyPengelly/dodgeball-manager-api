@@ -331,3 +331,63 @@ export interface SellPlayerResponse {
   sold_player: Player;
   budget: number;
 }
+
+// League related types
+export interface OpponentTeam {
+  id: string;
+  game_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface SeasonOpponentTeam {
+  id: string;
+  game_id: string;
+  season: number;
+  opponent_team_id: string;
+  created_at: string;
+}
+
+export interface Fixture {
+  id: string;
+  game_id: string;
+  season: number;
+  match_day: number;
+  home_team_id: string;
+  away_team_id: string;
+  home_team_type: 'user' | 'opponent';
+  away_team_type: 'user' | 'opponent';
+  home_score?: number;
+  away_score?: number;
+  status: 'scheduled' | 'completed';
+  played_at?: string;
+  created_at: string;
+  home_team_name?: string; // Populated when fetching fixtures
+  away_team_name?: string; // Populated when fetching fixtures
+}
+
+export interface LeagueTableEntry {
+  team_id: string;
+  team_name: string;
+  team_type: 'user' | 'opponent';
+  played: number;
+  won: number;
+  lost: number;
+  points: number;
+}
+
+export interface GetLeagueResponse {
+  success: boolean;
+  message: string;
+  season: number;
+  fixtures: Fixture[];
+  table: LeagueTableEntry[];
+}
+
+export interface StartMainSeasonResponse {
+  success: boolean;
+  message: string;
+  game: Game;
+  fixtures: Fixture[];
+  opponent_teams: OpponentTeam[];
+}

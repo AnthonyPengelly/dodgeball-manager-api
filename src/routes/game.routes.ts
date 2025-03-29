@@ -155,4 +155,38 @@ router.post('/team', authMiddleware, validationMiddleware(createTeamSchema), gam
  */
 router.post('/:gameId/cancel', authMiddleware, gameController.cancelGame);
 
+/**
+ * @swagger
+ * /api/games/start-main-season:
+ *   post:
+ *     summary: Start the main season
+ *     description: Changes game stage from pre-season to regular season
+ *     tags: [Games]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Main season started successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Successfully started the main season
+ *                 game:
+ *                   type: object
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: No active game found
+ *       500:
+ *         description: Server error
+ */
+router.post('/start-main-season', authMiddleware, gameController.startMainSeason);
+
 export default router;
