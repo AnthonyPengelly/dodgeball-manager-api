@@ -1,26 +1,97 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import gameService from '../services/game.service';
+import { ApiError } from '../middleware/error.middleware';
 
-// Create controller object without class
 const gameController = {
   /**
    * Get the current game for the authenticated user
    */
-  getCurrentGame: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getCurrentGame(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.user.id;
+      const userId = req.user?.id;
       const token = req.headers.authorization?.split(' ')[1] || '';
+      
+      if (!userId) {
+        throw new ApiError(401, 'User not authenticated');
+      }
       
       const currentGame = await gameService.getCurrentGame(userId, token);
       
       if (!currentGame) {
-        res.status(404).json({ error: 'No active game found for this user' });
+        res.status(404).json({ message: 'No active game found' });
         return;
       }
       
       res.status(200).json({ data: currentGame });
     } catch (error) {
-      next(error);
+      console.error('Error in getCurrentGame controller:', error);
+      if (error instanceof ApiError) {
+        res.status(error.statusCode).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: 'Internal server error' });
+      }
+    }
+  },
+
+  /**
+   * Create a new team and game for the authenticated user
+   */
+  async createTeam(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      const token = req.headers.authorization?.split(' ')[1] || '';
+      
+      if (!userId) {
+        throw new ApiError(401, 'User not authenticated');
+      }
+      
+      const teamData = req.body;
+      
+      // Validate team name is provided
+      if (!teamData.name || typeof teamData.name !== 'string' || teamData.name.trim() === '') {
+        throw new ApiError(400, 'Team name is required');
+      }
+      
+      const result = await gameService.createTeam(userId, token, teamData);
+      
+      res.status(201).json({ data: result });
+    } catch (error) {
+      console.error('Error in createTeam controller:', error);
+      if (error instanceof ApiError) {
+        res.status(error.statusCode).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: 'Internal server error' });
+      }
+    }
+  },
+
+  /**
+   * Cancel an active game for the authenticated user
+   */
+  async cancelGame(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      const token = req.headers.authorization?.split(' ')[1] || '';
+      const { gameId } = req.params;
+      
+      if (!userId) {
+        throw new ApiError(401, 'User not authenticated');
+      }
+      
+      if (!gameId) {
+        throw new ApiError(400, 'Game ID is required');
+      }
+      
+      const result = await gameService.cancelGame(userId, token, gameId);
+      
+      res.status(200).json({ data: result });
+    } catch (error) {
+      console.error('Error in cancelGame controller:', error);
+      if (error instanceof ApiError) {
+        res.status(error.statusCode).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: 'Internal server error' });
+      }
     }
   }
 };

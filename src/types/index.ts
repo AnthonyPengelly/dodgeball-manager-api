@@ -37,9 +37,33 @@ export interface CurrentGameResponse {
   team_name: string;
 }
 
+// Matches the Supabase auth user type
 export interface User {
   id: string;
-  email: string;
-  aud: string;
-  role: string;
+  email?: string; // Make email optional to match Supabase type
+  aud?: string;
+  role?: string;
+  app_metadata?: Record<string, any>;
+  user_metadata?: Record<string, any>;
+}
+
+// Request to create a new team and game
+export interface CreateTeamRequest {
+  name: string;
+}
+
+// Response for team creation
+export interface CreateTeamResponse {
+  team_id: string;
+  team_name: string;
+  game_id: string;
+  game_season: number;
+  game_match_day: number;
+  game_status: string;
+}
+
+// Response for game cancellation
+export interface CancelGameResponse {
+  success: boolean;
+  message: string;
 }

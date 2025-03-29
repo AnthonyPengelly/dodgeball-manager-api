@@ -1,28 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
-import { Schema } from 'joi';
+import Joi from 'joi';
 import { ApiError } from './error.middleware';
 
 /**
- * Middleware factory to validate request data against a Joi schema
- * @param schema The Joi validation schema
- * @param property The request property to validate (body, params, query)
+ * Middleware for validating request data against a Joi schema
+ * @param schema Joi schema to validate against
+ * @returns Express middleware function
  */
-export const validate = (schema: Schema, property: 'body' | 'params' | 'query' = 'body') => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const { error } = schema.validate(req[property], {
+export const validationMiddleware = (schema: Joi.Schema) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const { error } = schema.validate(req.body, {
       abortEarly: false,
       stripUnknown: true,
     });
-    
+
     if (error) {
       const errorMessage = error.details
         .map((detail) => detail.message)
         .join(', ');
-        
-      next(new ApiError(400, `Validation error: ${errorMessage}`));
-      return;
+      
+      return next(new ApiError(400, `Validation error: ${errorMessage}`));
     }
-    
+
     next();
   };
 };

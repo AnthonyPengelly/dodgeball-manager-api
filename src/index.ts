@@ -1,16 +1,22 @@
+// Load environment variables first, before any other imports
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
-import dotenv from 'dotenv';
 import apiRoutes from './routes';
 import { specs } from './utils/swagger';
 import config from './config/config';
 import { errorHandler } from './middleware/error.middleware';
 import logger from './utils/logger';
+import { validateEnv } from './utils/env-validator';
 
-// Load environment variables
-dotenv.config();
+// Validate environment variables
+if (!validateEnv()) {
+  process.exit(1);
+}
 
 // Create Express app
 const app = express();
@@ -37,8 +43,16 @@ app.use(errorHandler);
 // Start the server
 const PORT = config.port;
 app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT} in ${config.environment} mode`);
+  logger.info(`Supabase URL: ${config.supabase.url.substring(0, 20)}...`);
   logger.info(`API Documentation available at http://localhost:${PORT}/api-docs`);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err: Error) => {
+  logger.error('Unhandled Rejection:', err);
+  // Close server & exit process
+  process.exit(1);
 });
 
 export default app;
