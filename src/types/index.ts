@@ -296,3 +296,38 @@ export interface UpgradeFacilityResponse {
   };
   cost: number;
 }
+
+// Transfer list types
+export interface TransferListedPlayer extends Player {
+  buy_price: number;
+  sell_price: number;
+}
+
+export interface GetTransferListResponse {
+  success: boolean;
+  message: string;
+  transfer_list: TransferListedPlayer[];
+  season: number;
+}
+
+export interface BuyTransferListedPlayerRequest {
+  player_id: string;
+}
+
+export interface BuyTransferListedPlayerResponse {
+  success: boolean;
+  message: string;
+  player: Player;
+  budget_remaining: number;
+}
+
+export interface SellPlayerRequest {
+  player_id: string;
+}
+
+export interface SellPlayerResponse {
+  success: boolean;
+  message: string;
+  sold_player: Player;
+  budget: number;
+}

@@ -89,12 +89,25 @@ CREATE TABLE IF NOT EXISTS scouted_players (
   UNIQUE(player_id, season_id)
 );
 
+-- Transfer list table
+CREATE TABLE IF NOT EXISTS transfer_list (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  season INT NOT NULL,
+  
+  -- Enforce uniqueness of player_id in transfer list
+  CONSTRAINT unique_player_in_transfer_list UNIQUE (player_id)
+);
+
 -- Add RLS (Row Level Security) policies for data access control
 -- Enable RLS on tables
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE games ENABLE ROW LEVEL SECURITY;
 ALTER TABLE players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE seasons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transfer_list ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
 -- Teams: users can only see and modify their own teams
@@ -120,6 +133,18 @@ CREATE POLICY seasons_user_policy ON seasons
     SELECT id FROM teams WHERE owner_id = auth.uid()
   ));
 
+-- Create policy to allow users to view transfer list for their games
+CREATE POLICY transfer_list_select_policy ON transfer_list 
+  FOR SELECT 
+  USING (
+    game_id IN (
+      SELECT g.id FROM games g
+      JOIN teams t ON t.game_id = g.id
+      WHERE t.owner_id = auth.uid()
+    )
+  );
+
 -- Create indexes for faster lookups
 CREATE INDEX players_game_id_idx ON players(game_id);
 CREATE INDEX players_status_idx ON players(status);
+CREATE INDEX idx_transfer_list_game_season ON transfer_list (game_id, season);

@@ -69,6 +69,33 @@ class GameService {
   }
 
   /**
+   * Get game by team ID
+   * 
+   * @param teamId The team ID to find the game for
+   * @param token JWT token
+   * @returns The game associated with the team
+   */
+  async getGameByTeamId(teamId: string, token: string) {
+    try {
+      const { data, error } = await createClientFromToken(token)
+        .from('games')
+        .select('*, teams!inner(*)')
+        .eq('teams.id', teamId)
+        .single();
+      
+      if (error) {
+        console.error('Error getting game by team ID:', error);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error in getGameByTeamId:', error);
+      return null;
+    }
+  }
+
+  /**
    * Create a new team and game for the authenticated user
    * @param userId The authenticated user's ID
    * @param token The JWT token of the authenticated user

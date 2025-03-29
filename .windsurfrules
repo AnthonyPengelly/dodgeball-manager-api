@@ -10,6 +10,6 @@ Auth is provided by supabase. Every API endpoint should verify the users JWT bea
 them to interact with teams/games they are part of. Though this API will use a service role to actually interact
 with the database. All database logic should be in this API. Do not include database functions where possible.
 
-Please include swagger documentation for the API.
+Please include swagger documentation for the API. Please keep files small and focused. If in doubt, start a new, more specific file.
 
 Please refer to GAME_DESIGN.md for the game design, but do not implement the features in here without being told, just use it to guide the current request to allow for the future.
