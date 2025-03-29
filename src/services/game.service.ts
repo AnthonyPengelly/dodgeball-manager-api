@@ -2,6 +2,7 @@ import { supabaseAdmin, createClientFromToken } from '../utils/supabase';
 import { CurrentGameResponse, TeamWithGame, Game, CreateTeamRequest, CreateTeamResponse, CancelGameResponse } from '../types';
 import { GAME_STATUS } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
+import playerService from './player.service';
 
 class GameService {
   /**
@@ -120,6 +121,15 @@ class GameService {
         // Attempt to clean up the game if team creation fails
         await supabaseAdmin.from('games').delete().eq('id', newGame.id);
         throw new Error('Failed to create new team');
+      }
+      
+      // Generate draft players for the new game (24 players with tier cap of 2)
+      try {
+        await playerService.generateDraftPlayers(newGame.id);
+      } catch (error) {
+        console.error('Error generating draft players:', error);
+        // Continue even if player generation fails, as the team and game were created successfully
+        // We'll log the error but not fail the whole operation
       }
       
       return {
