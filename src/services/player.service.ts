@@ -1,10 +1,17 @@
 import { supabaseAdmin, createClientFromToken } from '../utils/supabase';
-import { Player, PlayerStatus, GetDraftPlayersResponse, CompleteDraftRequest, CompleteDraftResponse, GetSquadResponse, TrainPlayerRequest, TrainPlayerResponse, PlayerStatName } from '../types';
+import { 
+  Player, PlayerStatus, GetDraftPlayersResponse, CompleteDraftRequest, 
+  CompleteDraftResponse, GetSquadResponse, TrainPlayerRequest, 
+  TrainPlayerResponse, PlayerStatName, ScoutPlayersRequest, 
+  ScoutPlayersResponse, PurchaseScoutedPlayerRequest, 
+  PurchaseScoutedPlayerResponse, ScoutedPlayer, GetScoutedPlayersResponse
+} from '../types';
 import { PlayerGenerator } from '../utils/player-generator';
-import { DRAFT_CONSTANTS, GAME_STAGE, PLAYER_STATUS, TRAINING_CONSTANTS, PLAYER_STATS } from '../utils/constants';
+import { DRAFT_CONSTANTS, GAME_STAGE, PLAYER_STATUS, TRAINING_CONSTANTS, PLAYER_STATS, SCOUTING_CONSTANTS } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import seasonService from './season.service';
 import { TierCalculator } from '../utils/tier-calculator';
+import { PlayerPriceCalculator } from '../utils/player-price-calculator';
 
 class PlayerService {
   /**
@@ -411,6 +418,266 @@ class PlayerService {
         throw error;
       }
       throw new ApiError(500, 'Failed to train player');
+    }
+  }
+
+  /**
+   * Generate players to scout for the current season
+   * @param teamId The team ID to scout players for
+   * @param scoutData Optional data for scouting including number of credits to use
+   * @param token The JWT token of the authenticated user
+   * @returns The scouted players and updated season scouting info
+   */
+  async scoutPlayers(teamId: string, scoutData: ScoutPlayersRequest, token: string): Promise<ScoutPlayersResponse> {
+    try {
+      // Create a client with the user's token to respect RLS policies
+      const supabaseClient = createClientFromToken(token);
+      
+      // Get the team and game information
+      const { data: team, error: teamError } = await supabaseClient
+        .from('teams')
+        .select(`
+          *,
+          games:game_id (
+            id,
+            game_stage,
+            season
+          )
+        `)
+        .eq('id', teamId)
+        .single();
+      
+      if (teamError || !team) {
+        console.error('Error getting team:', teamError);
+        throw new ApiError(404, 'Team not found');
+      }
+      
+      // Extract game data
+      const gameData = team.games as { id: string; game_stage: string; season: number } | { id: string; game_stage: string; season: number }[];
+      
+      // Validate the game is in the pre_season stage or regular_season
+      let isValidStage = false;
+      let gameId = '';
+      let gameSeason = 1;
+      
+      if (Array.isArray(gameData)) {
+        isValidStage = gameData.length > 0 && (
+          gameData[0].game_stage === GAME_STAGE.PRE_SEASON
+        );
+        gameId = gameData.length > 0 ? gameData[0].id : '';
+        gameSeason = gameData.length > 0 ? gameData[0].season : 1;
+      } else {
+        isValidStage = (
+          gameData.game_stage === GAME_STAGE.PRE_SEASON
+        );
+        gameId = gameData.id;
+        gameSeason = gameData.season;
+      }
+      
+      if (!isValidStage) {
+        throw new ApiError(400, 'Scouting can only be done during the pre-season');
+      }
+      
+      // Get the current season and calculate scouting credits
+      const currentSeason = await seasonService.getCurrentSeason(teamId, token);
+      const scoutingInfo = seasonService.calculateScoutingCredits(currentSeason, team.scout_level);
+      
+      // Determine how many credits to use (default to 1)
+      const creditsToUse = scoutData.count ? Math.min(scoutData.count, scoutingInfo.scouting_credits_remaining) : 1;
+      
+      if (creditsToUse <= 0 || scoutingInfo.scouting_credits_remaining <= 0) {
+        throw new ApiError(400, 'No scouting credits remaining for this season');
+      }
+      
+      if (creditsToUse > scoutingInfo.scouting_credits_remaining) {
+        throw new ApiError(400, `Not enough scouting credits. Requested: ${creditsToUse}, Available: ${scoutingInfo.scouting_credits_remaining}`);
+      }
+      
+      // Calculate how many players to generate
+      const playersToGenerate = creditsToUse * SCOUTING_CONSTANTS.PLAYERS_PER_CREDIT;
+      
+      // Generate players with tier distribution based on current game season
+      // For tier distribution, generate based on current season tier +/- MAX_TIER_DIFF
+      const minTier = Math.max(1, gameSeason - SCOUTING_CONSTANTS.MAX_TIER_DIFF);
+      const maxTier = gameSeason + SCOUTING_CONSTANTS.MAX_TIER_DIFF;
+      
+      // Generate players
+      const generatedPlayers = PlayerGenerator.generatePlayersInTierRange(playersToGenerate, minTier, maxTier);
+
+      // Prepare players for database insertion
+      const playersToInsert = generatedPlayers.map(player => ({
+        game_id: gameId,
+        name: player.name,
+        status: 'scout' as PlayerStatus,
+        tier: player.tier,
+        potential_tier: player.potentialTier,
+        ...player.stats,
+        ...player.potentialStats
+      }));
+      
+      // Insert players into the database
+      const { data: insertedPlayers, error: insertError } = await supabaseAdmin
+        .from('players')
+        .insert(playersToInsert)
+        .select();
+      
+      if (insertError) {
+        console.error('Error generating scout players:', insertError);
+        throw new ApiError(500, 'Failed to generate scout players');
+      }
+      
+      // Calculate prices and create scouted_players records
+      const scoutedPlayerRecords = insertedPlayers.map(player => {
+        const scoutPrice = PlayerPriceCalculator.calculateScoutPrice(player as unknown as Player);
+        const buyPrice = PlayerPriceCalculator.calculateBuyPrice(player as unknown as Player);
+        
+        return {
+          player_id: player.id,
+          season_id: currentSeason.id,
+          is_purchased: false,
+          scout_price: scoutPrice,
+          buy_price: buyPrice
+        };
+      });
+      
+      // Insert scouted_players records
+      const { data: scoutedPlayers, error: scoutedError } = await supabaseAdmin
+        .from('scouted_players')
+        .insert(scoutedPlayerRecords)
+        .select();
+      
+      if (scoutedError) {
+        console.error('Error creating scouted player records:', scoutedError);
+        throw new ApiError(500, 'Failed to create scouted player records');
+      }
+      
+      // Update the scouting credits used
+      const updatedSeason = await seasonService.updateScoutingCreditsUsed(currentSeason.id, creditsToUse);
+      
+      // Calculate updated scouting info
+      const updatedScoutingInfo = seasonService.calculateScoutingCredits(updatedSeason, team.scout_level);
+      
+      return {
+        success: true,
+        message: `Successfully scouted ${insertedPlayers.length} players using ${creditsToUse} scouting credits`,
+        players: insertedPlayers as unknown as Player[],
+        scouted_players: scoutedPlayers as unknown as ScoutedPlayer[],
+        season: updatedScoutingInfo
+      };
+    } catch (error) {
+      console.error('PlayerService.scoutPlayers error:', error);
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(500, 'Failed to scout players');
+    }
+  }
+
+  /**
+   * Purchase a scouted player for the team
+   * @param teamId The team ID purchasing the player
+   * @param purchaseData The purchase data with scouted player ID
+   * @param token The JWT token of the authenticated user
+   * @returns The purchased player and updated team budget
+   */
+  async purchaseScoutedPlayer(teamId: string, purchaseData: PurchaseScoutedPlayerRequest, token: string): Promise<PurchaseScoutedPlayerResponse> {
+    try {
+      // Create a client with the user's token to respect RLS policies
+      const supabaseClient = createClientFromToken(token);
+      
+      // Get the scouted player with associated player details
+      const { data: scoutedPlayer, error: scoutedError } = await supabaseClient
+        .from('scouted_players')
+        .select(`
+          *,
+          player:player_id (*),
+          season:season_id (team_id)
+        `)
+        .eq('id', purchaseData.scouted_player_id)
+        .single();
+      
+      if (scoutedError || !scoutedPlayer) {
+        console.error('Error getting scouted player:', scoutedError);
+        throw new ApiError(404, 'Scouted player not found');
+      }
+      
+      // Verify the season belongs to this team
+      if (scoutedPlayer.season.team_id !== teamId) {
+        throw new ApiError(403, 'This scouted player does not belong to your team');
+      }
+      
+      // Check if player is already purchased
+      if (scoutedPlayer.is_purchased) {
+        throw new ApiError(400, 'This player has already been purchased');
+      }
+      
+      // Get the team's current budget
+      const { data: team, error: teamError } = await supabaseClient
+        .from('teams')
+        .select('*')
+        .eq('id', teamId)
+        .single();
+      
+      if (teamError || !team) {
+        console.error('Error getting team:', teamError);
+        throw new ApiError(404, 'Team not found');
+      }
+      
+      // Check if the team can afford the player
+      if (team.budget < scoutedPlayer.scout_price) {
+        throw new ApiError(400, `Insufficient funds: The player costs ${scoutedPlayer.scout_price} but you only have ${team.budget} available`);
+      }
+      
+      // Update the scouted player record to mark as purchased
+      const { error: updateScoutedError } = await supabaseAdmin
+        .from('scouted_players')
+        .update({ is_purchased: true })
+        .eq('id', purchaseData.scouted_player_id);
+      
+      if (updateScoutedError) {
+        console.error('Error updating scouted player:', updateScoutedError);
+        throw new ApiError(500, 'Failed to update scouted player');
+      }
+      
+      // Update the player status to team
+      const { data: updatedPlayer, error: updatePlayerError } = await supabaseAdmin
+        .from('players')
+        .update({ status: PLAYER_STATUS.TEAM })
+        .eq('id', scoutedPlayer.player_id)
+        .select()
+        .single();
+      
+      if (updatePlayerError) {
+        console.error('Error updating player status:', updatePlayerError);
+        throw new ApiError(500, 'Failed to update player status');
+      }
+      
+      // Deduct the buy price from the team's budget
+      const newBudget = team.budget - scoutedPlayer.scout_price;
+      const { data: updatedTeam, error: updateTeamError } = await supabaseAdmin
+        .from('teams')
+        .update({ budget: newBudget })
+        .eq('id', teamId)
+        .select('id, name, budget')
+        .single();
+      
+      if (updateTeamError) {
+        console.error('Error updating team budget:', updateTeamError);
+        throw new ApiError(500, 'Failed to update team budget');
+      }
+      
+      return {
+        success: true,
+        message: `Successfully purchased player ${updatedPlayer.name} for ${scoutedPlayer.scout_price}`,
+        player: updatedPlayer as Player,
+        team: updatedTeam
+      };
+    } catch (error) {
+      console.error('PlayerService.purchaseScoutedPlayer error:', error);
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(500, 'Failed to purchase scouted player');
     }
   }
 }

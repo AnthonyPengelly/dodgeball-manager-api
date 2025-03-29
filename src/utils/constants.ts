@@ -50,6 +50,22 @@ export const TRAINING_CONSTANTS = {
   MIN_STAT_VALUE: 1
 };
 
+// Scouting constants
+export const SCOUTING_CONSTANTS = {
+  // Scouting credits available based on scout level
+  CREDITS_BY_LEVEL: {
+    1: 1,  // Level 1: 2 scouting credits
+    2: 2,  // Level 2: 3 scouting credits
+    3: 3,  // Level 3: 5 scouting credits
+    4: 5,  // Level 4: 8 scouting credits
+    5: 8  // Level 5: 12 scouting credits
+  },
+  // Number of players generated per scout
+  PLAYERS_PER_CREDIT: 1,
+  // Maximum tier difference from current season
+  MAX_TIER_DIFF: 1
+};
+
 // Player stat names
 export const PLAYER_STATS = [
   'throwing',

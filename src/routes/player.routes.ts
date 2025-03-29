@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDraftPlayers, completeDraft, getSquad, trainPlayer } from '../controllers/player.controller';
+import { getDraftPlayers, completeDraft, getSquad } from '../controllers/player.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -204,75 +204,5 @@ router.post('/draft/complete', authMiddleware, completeDraft);
  *         description: Server error
  */
 router.get('/squad', authMiddleware, getSquad);
-
-/**
- * @swagger
- * /api/players/train:
- *   post:
- *     summary: Train a player by improving one of their stats
- *     tags: [Players]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - player_id
- *               - stat_name
- *             properties:
- *               player_id:
- *                 type: string
- *                 format: uuid
- *                 description: ID of the player to train
- *               stat_name:
- *                 type: string
- *                 enum: [throwing, catching, dodging, blocking, speed, positional_sense, teamwork, clutch_factor]
- *                 description: Name of the stat to improve
- *     responses:
- *       200:
- *         description: Player trained successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 player:
- *                   $ref: '#/components/schemas/Player'
- *                 team:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                       format: uuid
- *                     training_facility_level:
- *                       type: integer
- *                       minimum: 1
- *                       maximum: 5
- *                     training_credits_used:
- *                       type: integer
- *                       minimum: 0
- *                     training_credits_available:
- *                       type: integer
- *                       minimum: 0
- *                     training_credits_remaining:
- *                       type: integer
- *                       minimum: 0
- *       400:
- *         description: Invalid request, game not in pre-season, or no training credits remaining
- *       401:
- *         description: Unauthorized
- *       404:
- *         description: No active game found or player not found
- *       500:
- *         description: Server error
- */
-router.post('/train', authMiddleware, trainPlayer);
 
 export default router;

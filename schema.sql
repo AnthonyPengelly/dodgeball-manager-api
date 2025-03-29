@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS seasons (
   team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
   season_number INTEGER NOT NULL,
   training_credits_used INTEGER NOT NULL DEFAULT 0,
+  scouting_credits_used INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   -- Ensure uniqueness of game_id, team_id, and season_number combination
@@ -73,6 +74,19 @@ CREATE TABLE IF NOT EXISTS players (
   
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create scouted_players table
+CREATE TABLE IF NOT EXISTS scouted_players (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  season_id UUID NOT NULL REFERENCES seasons(id) ON DELETE CASCADE,
+  is_purchased BOOLEAN NOT NULL DEFAULT FALSE,
+  scout_price INTEGER NOT NULL,
+  buy_price INTEGER NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(player_id, season_id)
 );
 
 -- Add RLS (Row Level Security) policies for data access control

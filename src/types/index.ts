@@ -161,8 +161,22 @@ export interface Season {
   team_id: string;
   season_number: number;
   training_credits_used: number;
+  scouting_credits_used: number;
   created_at: string;
   updated_at: string;
+}
+
+// Scouted player information
+export interface ScoutedPlayer {
+  id: string;
+  player_id: string;
+  season_id: string;
+  is_purchased: boolean;
+  scout_price: number;
+  buy_price: number;
+  created_at: string;
+  updated_at: string;
+  player?: Player; // Included when joined with players table
 }
 
 // Training related types
@@ -190,6 +204,52 @@ export interface SeasonTrainingInfo {
 
 export interface GetSeasonTrainingInfoResponse {
   season: SeasonTrainingInfo;
+}
+
+// Scouting related types
+export interface ScoutPlayersRequest {
+  count?: number; // Optional: Number of scouting credits to use, defaults to 1
+}
+
+export interface ScoutPlayersResponse {
+  success: boolean;
+  message: string;
+  players: Player[];
+  scouted_players: ScoutedPlayer[];
+  season: SeasonScoutingInfo;
+}
+
+export interface PurchaseScoutedPlayerRequest {
+  scouted_player_id: string;
+}
+
+export interface PurchaseScoutedPlayerResponse {
+  success: boolean;
+  message: string;
+  player: Player;
+  team: {
+    id: string;
+    name: string;
+    budget: number;
+  };
+}
+
+export interface SeasonScoutingInfo {
+  id: string;
+  season_number: number;
+  team_id: string;
+  scout_level: number;
+  scouting_credits_used: number;
+  scouting_credits_available: number;
+  scouting_credits_remaining: number;
+}
+
+export interface GetSeasonScoutingInfoResponse {
+  season: SeasonScoutingInfo;
+}
+
+export interface GetScoutedPlayersResponse {
+  scouted_players: (ScoutedPlayer & { player: Player })[];
 }
 
 export type PlayerStatName = 

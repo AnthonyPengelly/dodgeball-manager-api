@@ -152,4 +152,27 @@ export class PlayerGenerator {
     
     return players;
   }
+  
+  /**
+   * Generate multiple players within a tier range
+   * @param count Number of players to generate
+   * @param minTier Minimum tier for the players
+   * @param maxTier Maximum tier for the players
+   * @returns Array of player objects with tiers between minTier and maxTier
+   */
+  public static generatePlayersInTierRange(count: number, minTier: number, maxTier: number): Array<{ 
+    name: string, 
+    stats: PlayerStats, 
+    potentialStats: PlayerPotentialStats,
+    tier: number,
+    potentialTier: number
+  }> {
+    const players = [];
+    
+    for (let i = 0; i < count; i++) {
+      players.push(this.generatePlayer(undefined, minTier, maxTier));
+    }
+    
+    return players;
+  }
 }
