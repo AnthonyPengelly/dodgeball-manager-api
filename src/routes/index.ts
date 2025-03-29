@@ -4,6 +4,7 @@ import gameRoutes from './game.routes';
 import seasonRoutes from './season.routes';
 import transferRoutes from './transfer.routes';
 import leagueRoutes from './league.routes';
+import matchRoutes from './match.routes';
 
 const router = Router();
 
@@ -13,5 +14,6 @@ router.use('/games', gameRoutes);
 router.use('/seasons', seasonRoutes);
 router.use('/transfers', transferRoutes);
 router.use('/leagues', leagueRoutes);
+router.use('/matches', matchRoutes);
 
 export default router;

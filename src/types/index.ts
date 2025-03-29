@@ -384,6 +384,18 @@ export interface GetLeagueResponse {
   table: LeagueTableEntry[];
 }
 
+export interface EnhancedFixture extends Fixture {
+  home_team_name: string;
+  away_team_name: string;
+}
+
+export interface PlayMatchResponse {
+  success: boolean;
+  message: string;
+  match: EnhancedFixture;
+  match_day: number;
+}
+
 export interface StartMainSeasonResponse {
   success: boolean;
   message: string;
