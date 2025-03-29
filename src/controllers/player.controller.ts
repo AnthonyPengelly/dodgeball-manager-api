@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import playerService from '../services/player.service';
 import gameService from '../services/game.service';
 import { ApiError } from '../middleware/error.middleware';
-import { CompleteDraftRequest } from '../types';
-import { DRAFT_CONSTANTS } from '../utils/constants';
+import { CompleteDraftRequest, TrainPlayerRequest } from '../types';
+import { DRAFT_CONSTANTS, PLAYER_STATS } from '../utils/constants';
 
 /**
  * Get draft players for the current game
@@ -123,6 +123,53 @@ export const getSquad = async (req: Request, res: Response) => {
       res.status(error.statusCode).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'Failed to get squad' });
+    }
+  }
+};
+
+/**
+ * Train a player by improving one of their stats
+ * @param req Express request
+ * @param res Express response
+ */
+export const trainPlayer = async (req: Request, res: Response) => {
+  try {
+    // Get user ID from the request (set by the auth middleware)
+    const userId = req.user?.id;
+    const token = req.headers.authorization?.split(' ')[1] || '';
+    
+    if (!userId) {
+      throw new ApiError(401, 'Unauthorized');
+    }
+    
+    // Get the current game
+    const currentGame = await gameService.getCurrentGame(userId, token);
+    
+    if (!currentGame) {
+      throw new ApiError(404, 'No active game found');
+    }
+    
+    // Validate request body
+    const trainingData = req.body as TrainPlayerRequest;
+    
+    if (!trainingData.player_id) {
+      throw new ApiError(400, 'Invalid request: player_id is required');
+    }
+    
+    if (!trainingData.stat_name || !PLAYER_STATS.includes(trainingData.stat_name)) {
+      throw new ApiError(400, 'Invalid request: stat_name must be a valid player stat');
+    }
+    
+    // Train the player
+    const result = await playerService.trainPlayer(currentGame.team_id, trainingData, token);
+    
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in trainPlayer controller:', error);
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Failed to train player' });
     }
   }
 };

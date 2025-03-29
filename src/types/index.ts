@@ -154,3 +154,50 @@ export interface CompleteDraftResponse {
 export interface GetSquadResponse {
   players: Player[];
 }
+
+export interface Season {
+  id: string;
+  game_id: string;
+  team_id: string;
+  season_number: number;
+  training_credits_used: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Training related types
+export interface TrainPlayerRequest {
+  player_id: string;
+  stat_name: PlayerStatName;
+}
+
+export interface TrainPlayerResponse {
+  success: boolean;
+  message: string;
+  player: Player;
+  season: SeasonTrainingInfo;
+}
+
+export interface SeasonTrainingInfo {
+  id: string;
+  season_number: number;
+  team_id: string;
+  training_facility_level: number;
+  training_credits_used: number;
+  training_credits_available: number;
+  training_credits_remaining: number;
+}
+
+export interface GetSeasonTrainingInfoResponse {
+  season: SeasonTrainingInfo;
+}
+
+export type PlayerStatName = 
+  | 'throwing'
+  | 'catching'
+  | 'dodging'
+  | 'blocking'
+  | 'speed'
+  | 'positional_sense'
+  | 'teamwork'
+  | 'clutch_factor';

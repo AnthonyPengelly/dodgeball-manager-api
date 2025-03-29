@@ -34,6 +34,34 @@ export const DRAFT_CONSTANTS = {
   REQUIRED_PLAYERS: 8,  // Number of players required to complete the draft
 };
 
+// Training constants
+export const TRAINING_CONSTANTS = {
+  // Training credits available based on training facility level
+  CREDITS_BY_LEVEL: {
+    1: 3,  // Level 1: 3 training credits
+    2: 5,  // Level 2: 5 training credits
+    3: 8,  // Level 3: 8 training credits
+    4: 12, // Level 4: 12 training credits
+    5: 16  // Level 5: 16 training credits
+  },
+  // Maximum stat value
+  MAX_STAT_VALUE: 5,
+  // Minimum stat value
+  MIN_STAT_VALUE: 1
+};
+
+// Player stat names
+export const PLAYER_STATS = [
+  'throwing',
+  'catching',
+  'dodging',
+  'blocking',
+  'speed',
+  'positional_sense',
+  'teamwork',
+  'clutch_factor'
+];
+
 // Authentication related
 export const AUTH_ERRORS = {
   UNAUTHORIZED: 'Unauthorized: No token provided',

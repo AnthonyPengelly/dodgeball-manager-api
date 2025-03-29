@@ -27,6 +27,19 @@ CREATE TABLE IF NOT EXISTS teams (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create seasons table
+CREATE TABLE IF NOT EXISTS seasons (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  season_number INTEGER NOT NULL,
+  training_credits_used INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  -- Ensure uniqueness of game_id, team_id, and season_number combination
+  UNIQUE(game_id, team_id, season_number)
+);
+
 -- Create players table
 CREATE TABLE IF NOT EXISTS players (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -67,6 +80,7 @@ CREATE TABLE IF NOT EXISTS players (
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE games ENABLE ROW LEVEL SECURITY;
 ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+ALTER TABLE seasons ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
 -- Teams: users can only see and modify their own teams
@@ -84,6 +98,12 @@ CREATE POLICY games_user_policy ON games
 CREATE POLICY players_user_policy ON players
   USING (game_id IN (
     SELECT game_id FROM teams WHERE owner_id = auth.uid()
+  ));
+
+-- Seasons: users can only see seasons of their own teams
+CREATE POLICY seasons_user_policy ON seasons
+  USING (team_id IN (
+    SELECT id FROM teams WHERE owner_id = auth.uid()
   ));
 
 -- Create indexes for faster lookups
