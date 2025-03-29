@@ -1,0 +1,15 @@
+This is an API for a dodgeball manager game.
+Please follow any existing patterns where possible.
+DO NOT include features beyond what you have been asked, as these will be provided to you step-by-step.
+If it is not clear how to proceed, you should ask for clarification, rather than guessing.
+
+The supabase database schema should be defined in schema.sql. Any changes made to this should also be created
+in a migration file that can be applied directly to the database.
+
+Auth is provided by supabase. Every API endpoint should verify the users JWT bearer token, and only allow
+them to interact with teams/games they are part of. Though this API will use a service role to actually interact
+with the database. All database logic should be in this API. Do not include database functions where possible.
+
+Please include swagger documentation for the API.
+
+Please refer to GAME_DESIGN.md for the game design, but do not implement the features in here without being told, just use it to guide the current request to allow for the future.
