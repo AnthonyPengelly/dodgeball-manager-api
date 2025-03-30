@@ -1,9 +1,10 @@
-import { supabaseAdmin, createClientFromToken } from '../utils/supabase';
-import { Season, SeasonTrainingInfo, GetSeasonTrainingInfoResponse, SeasonScoutingInfo, GetSeasonScoutingInfoResponse, ScoutedPlayer, Player, GetFacilityInfoResponse, UpgradeFacilityResponse } from '../types';
-import { TRAINING_CONSTANTS, SCOUTING_CONSTANTS } from '../utils/constants';
+import { Season, SeasonTrainingInfo, GetSeasonTrainingInfoResponse, SeasonScoutingInfo, GetSeasonScoutingInfoResponse, GetFacilityInfoResponse, UpgradeFacilityResponse, ScoutedPlayer } from '../types';
+import { TRAINING_CONSTANTS, SCOUTING_CONSTANTS, GAME_STAGE } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import { FacilityUpgradeCalculator } from '../utils/facility-upgrade-calculator';
-import { GAME_STAGE } from '../utils/constants';
+import * as seasonRepository from '../repositories/seasonRepository';
+import * as teamRepository from '../repositories/teamRepository';
+import * as scoutRepository from '../repositories/scoutRepository';
 
 class SeasonService {
   /**
@@ -14,80 +15,36 @@ class SeasonService {
    */
   async getCurrentSeason(teamId: string, token: string): Promise<Season> {
     try {
-      // Create a client with the user's token to respect RLS policies
-      const supabaseClient = createClientFromToken(token);
-      
-      // Get the team to find the game and current season number
-      const { data: team, error: teamError } = await supabaseClient
-        .from('teams')
-        .select(`
-          id,
-          game_id,
-          games:game_id (
-            id,
-            season
-          )
-        `)
-        .eq('id', teamId)
-        .single();
-      
-      if (teamError || !team) {
-        console.error('Error getting team:', teamError);
+      // Get team with game information
+      const team = await teamRepository.getTeamWithGameInfo(teamId, token);
+      if (!team) {
         throw new ApiError(404, 'Team not found');
       }
       
-      // Extract game data
-      const gameData = team.games as { id: string; season: number } | { id: string; season: number }[];
-      let gameId = '';
-      let seasonNumber = 1;
+      // Extract game data and season number
+      const { gameId, seasonNumber } = this.extractGameInfo(team);
       
-      if (Array.isArray(gameData)) {
-        // If it's an array, get the first game
-        gameId = gameData.length > 0 ? gameData[0].id : '';
-        seasonNumber = gameData.length > 0 ? gameData[0].season : 1;
-      } else {
-        // If it's a single object
-        gameId = gameData.id;
-        seasonNumber = gameData.season;
-      }
+      // Try to get existing season for this team and season number
+      const existingSeason = await seasonRepository.getSeasonByTeamAndNumber(
+        teamId, 
+        gameId, 
+        seasonNumber, 
+        token
+      );
       
-      // Check if a season record already exists for this team and season
-      const { data: existingSeason, error: seasonError } = await supabaseClient
-        .from('seasons')
-        .select('*')
-        .eq('team_id', teamId)
-        .eq('game_id', gameId)
-        .eq('season_number', seasonNumber)
-        .single();
-      
-      if (seasonError && seasonError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-        console.error('Error getting season:', seasonError);
-        throw new ApiError(500, 'Failed to get season data');
-      }
-      
+      // Return existing season if found
       if (existingSeason) {
-        return existingSeason as Season;
+        return existingSeason;
       }
       
-      // If no season record exists, create one
-      const { data: newSeason, error: createError } = await supabaseAdmin
-        .from('seasons')
-        .insert({
-          team_id: teamId,
-          game_id: gameId,
-          season_number: seasonNumber,
-          training_credits_used: 0,
-          scouting_credits_used: 0
-        })
-        .select()
-        .single();
-      
-      if (createError) {
-        console.error('Error creating season:', createError);
-        throw new ApiError(500, 'Failed to create season record');
-      }
-      
-      return newSeason as Season;
+      // Create a new season if none exists
+      return await seasonRepository.createSeason({
+        team_id: teamId,
+        game_id: gameId,
+        season_number: seasonNumber,
+        training_credits_used: 0,
+        scouting_credits_used: 0
+      });
     } catch (error) {
       console.error('SeasonService.getCurrentSeason error:', error);
       if (error instanceof ApiError) {
@@ -98,6 +55,29 @@ class SeasonService {
   }
 
   /**
+   * Extract game ID and season number from team data
+   * @param team Team data with game information
+   * @returns Game ID and season number
+   */
+  private extractGameInfo(team: any): { gameId: string; seasonNumber: number } {
+    const gameData = team.games;
+    let gameId = '';
+    let seasonNumber = 1;
+    
+    if (Array.isArray(gameData)) {
+      // If it's an array, get the first game
+      gameId = gameData.length > 0 ? gameData[0].id : '';
+      seasonNumber = gameData.length > 0 ? gameData[0].season : 1;
+    } else {
+      // If it's a single object
+      gameId = gameData.id;
+      seasonNumber = gameData.season;
+    }
+    
+    return { gameId, seasonNumber };
+  }
+
+  /**
    * Get training information for the current season
    * @param teamId The team ID
    * @param token The JWT token of the authenticated user
@@ -105,27 +85,17 @@ class SeasonService {
    */
   async getSeasonTrainingInfo(teamId: string, token: string): Promise<GetSeasonTrainingInfoResponse> {
     try {
-      // Create a client with the user's token to respect RLS policies
-      const supabaseClient = createClientFromToken(token);
-      
       // Get the current season
       const currentSeason = await this.getCurrentSeason(teamId, token);
       
       // Get the team's training facility level
-      const { data: team, error: teamError } = await supabaseClient
-        .from('teams')
-        .select('training_facility_level')
-        .eq('id', teamId)
-        .single();
-      
-      if (teamError || !team) {
-        console.error('Error getting team:', teamError);
+      const team = await teamRepository.getTeamById(teamId, token);
+      if (!team) {
         throw new ApiError(404, 'Team not found');
       }
       
-      // Calculate training credits
+      // Calculate and return training credits info
       const trainingInfo = this.calculateTrainingCredits(currentSeason, team.training_facility_level);
-      
       return { season: trainingInfo };
     } catch (error) {
       console.error('SeasonService.getSeasonTrainingInfo error:', error);
@@ -144,27 +114,17 @@ class SeasonService {
    */
   async getSeasonScoutingInfo(teamId: string, token: string): Promise<GetSeasonScoutingInfoResponse> {
     try {
-      // Create a client with the user's token to respect RLS policies
-      const supabaseClient = createClientFromToken(token);
-      
       // Get the current season
       const currentSeason = await this.getCurrentSeason(teamId, token);
       
       // Get the team's scout level
-      const { data: team, error: teamError } = await supabaseClient
-        .from('teams')
-        .select('scout_level')
-        .eq('id', teamId)
-        .single();
-      
-      if (teamError || !team) {
-        console.error('Error getting team:', teamError);
+      const team = await teamRepository.getTeamById(teamId, token);
+      if (!team) {
         throw new ApiError(404, 'Team not found');
       }
       
-      // Calculate scouting credits
+      // Calculate and return scouting credits info
       const scoutingInfo = this.calculateScoutingCredits(currentSeason, team.scout_level);
-      
       return { season: scoutingInfo };
     } catch (error) {
       console.error('SeasonService.getSeasonScoutingInfo error:', error);
@@ -181,30 +141,13 @@ class SeasonService {
    * @param token The JWT token of the authenticated user
    * @returns All scouted players including their player details
    */
-  async getScoutedPlayers(teamId: string, token: string): Promise<(ScoutedPlayer & { player: Player })[]> {
+  async getScoutedPlayers(teamId: string, token: string): Promise<ScoutedPlayer[]> {
     try {
-      // Create a client with the user's token to respect RLS policies
-      const supabaseClient = createClientFromToken(token);
-      
       // Get the current season
       const currentSeason = await this.getCurrentSeason(teamId, token);
       
-      // Get all scouted players for this season with their player details
-      const { data: scoutedPlayers, error } = await supabaseClient
-        .from('scouted_players')
-        .select(`
-          *,
-          player:player_id (*)
-        `)
-        .eq('season_id', currentSeason.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error getting scouted players:', error);
-        throw new ApiError(500, 'Failed to get scouted players');
-      }
-      
-      return scoutedPlayers as unknown as (ScoutedPlayer & { player: Player })[];
+      // Get scouted players using the repository
+      return await scoutRepository.getScoutedPlayersForSeason(currentSeason.id, token);
     } catch (error) {
       console.error('SeasonService.getScoutedPlayers error:', error);
       if (error instanceof ApiError) {
@@ -216,41 +159,13 @@ class SeasonService {
 
   /**
    * Update the training credits used for a season
-   * @param seasonId The season ID to update
+   * @param seasonId The season ID
    * @param creditsUsed The number of credits to add to the used count
    * @returns The updated season data
    */
   async updateTrainingCreditsUsed(seasonId: string, creditsUsed: number = 1): Promise<Season> {
     try {
-      // Get the current season data
-      const { data: currentSeason, error: getError } = await supabaseAdmin
-        .from('seasons')
-        .select('training_credits_used')
-        .eq('id', seasonId)
-        .single();
-      
-      if (getError) {
-        console.error('Error getting season for credits update:', getError);
-        throw new ApiError(404, 'Season not found');
-      }
-      
-      // Calculate the new credits used
-      const newCreditsUsed = (currentSeason.training_credits_used || 0) + creditsUsed;
-      
-      // Update the season
-      const { data: updatedSeason, error: updateError } = await supabaseAdmin
-        .from('seasons')
-        .update({ training_credits_used: newCreditsUsed })
-        .eq('id', seasonId)
-        .select()
-        .single();
-      
-      if (updateError) {
-        console.error('Error updating season training credits:', updateError);
-        throw new ApiError(500, 'Failed to update training credits');
-      }
-      
-      return updatedSeason as Season;
+      return await seasonRepository.updateTrainingCreditsUsed(seasonId, creditsUsed);
     } catch (error) {
       console.error('SeasonService.updateTrainingCreditsUsed error:', error);
       if (error instanceof ApiError) {
@@ -262,41 +177,13 @@ class SeasonService {
 
   /**
    * Update the scouting credits used for a season
-   * @param seasonId The season ID to update
+   * @param seasonId The season ID
    * @param creditsUsed The number of credits to add to the used count
    * @returns The updated season data
    */
   async updateScoutingCreditsUsed(seasonId: string, creditsUsed: number = 1): Promise<Season> {
     try {
-      // Get the current season data
-      const { data: currentSeason, error: getError } = await supabaseAdmin
-        .from('seasons')
-        .select('scouting_credits_used')
-        .eq('id', seasonId)
-        .single();
-      
-      if (getError) {
-        console.error('Error getting season for credits update:', getError);
-        throw new ApiError(404, 'Season not found');
-      }
-      
-      // Calculate the new credits used
-      const newCreditsUsed = (currentSeason.scouting_credits_used || 0) + creditsUsed;
-      
-      // Update the season
-      const { data: updatedSeason, error: updateError } = await supabaseAdmin
-        .from('seasons')
-        .update({ scouting_credits_used: newCreditsUsed })
-        .eq('id', seasonId)
-        .select()
-        .single();
-      
-      if (updateError) {
-        console.error('Error updating season scouting credits:', updateError);
-        throw new ApiError(500, 'Failed to update scouting credits');
-      }
-      
-      return updatedSeason as Season;
+      return await seasonRepository.updateScoutingCreditsUsed(seasonId, creditsUsed);
     } catch (error) {
       console.error('SeasonService.updateScoutingCreditsUsed error:', error);
       if (error instanceof ApiError) {
@@ -368,38 +255,25 @@ class SeasonService {
   async getFacilityInfo(teamId: string, token: string): Promise<GetFacilityInfoResponse> {
     try {
       // Get the team information
-      const { data: team, error: teamError } = await createClientFromToken(token)
-        .from('teams')
-        .select('*')
-        .eq('id', teamId)
-        .single();
-      
-      if (teamError || !team) {
-        console.error('Error getting team:', teamError);
+      const team = await teamRepository.getTeamById(teamId, token);
+      if (!team) {
         throw new ApiError(404, 'Team not found');
       }
       
-      // Calculate upgrade costs
-      const trainingUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.training_facility_level, 'training');
-      const scoutUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.scout_level, 'scout');
-      const stadiumUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.stadium_size, 'stadium');
-      
-      // Check if the team can afford upgrades
-      const canAffordTraining = team.budget >= trainingUpgradeCost && trainingUpgradeCost > 0;
-      const canAffordScout = team.budget >= scoutUpgradeCost && scoutUpgradeCost > 0;
-      const canAffordStadium = team.budget >= stadiumUpgradeCost && stadiumUpgradeCost > 0;
+      // Calculate upgrade costs and affordability
+      const { upgradeCosts, affordability } = this.calculateFacilityUpgrades(team);
       
       return {
         facility: {
           training_facility_level: team.training_facility_level,
           scout_level: team.scout_level,
           stadium_size: team.stadium_size,
-          training_facility_upgrade_cost: trainingUpgradeCost,
-          scout_upgrade_cost: scoutUpgradeCost,
-          stadium_upgrade_cost: stadiumUpgradeCost,
-          can_afford_training_upgrade: canAffordTraining,
-          can_afford_scout_upgrade: canAffordScout,
-          can_afford_stadium_upgrade: canAffordStadium,
+          training_facility_upgrade_cost: upgradeCosts.training,
+          scout_upgrade_cost: upgradeCosts.scout,
+          stadium_upgrade_cost: upgradeCosts.stadium,
+          can_afford_training_upgrade: affordability.training,
+          can_afford_scout_upgrade: affordability.scout,
+          can_afford_stadium_upgrade: affordability.stadium,
           budget: team.budget
         }
       };
@@ -413,6 +287,39 @@ class SeasonService {
   }
   
   /**
+   * Calculate facility upgrade costs and affordability
+   * @param team Team data with budget and facility levels
+   * @returns Upgrade costs and affordability for each facility
+   */
+  private calculateFacilityUpgrades(team: any): { 
+    upgradeCosts: { training: number; scout: number; stadium: number },
+    affordability: { training: boolean; scout: boolean; stadium: boolean }
+  } {
+    // Calculate upgrade costs
+    const trainingUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.training_facility_level, 'training');
+    const scoutUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.scout_level, 'scout');
+    const stadiumUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.stadium_size, 'stadium');
+    
+    // Check if the team can afford upgrades
+    const canAffordTraining = team.budget >= trainingUpgradeCost && trainingUpgradeCost > 0;
+    const canAffordScout = team.budget >= scoutUpgradeCost && scoutUpgradeCost > 0;
+    const canAffordStadium = team.budget >= stadiumUpgradeCost && stadiumUpgradeCost > 0;
+    
+    return {
+      upgradeCosts: {
+        training: trainingUpgradeCost,
+        scout: scoutUpgradeCost,
+        stadium: stadiumUpgradeCost
+      },
+      affordability: {
+        training: canAffordTraining,
+        scout: canAffordScout,
+        stadium: canAffordStadium
+      }
+    };
+  }
+  
+  /**
    * Upgrade a team's facility (training or scouting)
    * 
    * @param teamId Team ID
@@ -422,102 +329,35 @@ class SeasonService {
    */
   async upgradeFacility(teamId: string, facilityType: 'training' | 'scout' | 'stadium', token: string): Promise<UpgradeFacilityResponse> {
     try {
-      // Get the team and game information
-      const { data: team, error: teamError } = await createClientFromToken(token)
-        .from('teams')
-        .select(`
-          *,
-          games:game_id (
-            id,
-            game_stage
-          )
-        `)
-        .eq('id', teamId)
-        .single();
-      
-      if (teamError || !team) {
-        console.error('Error getting team:', teamError);
+      // Get the team with game stage information
+      const team = await teamRepository.getTeamWithGameInfo(teamId, token);
+      if (!team) {
         throw new ApiError(404, 'Team not found');
       }
       
-      // Extract game data
-      const gameData = team.games as { id: string; game_stage: string; } | { id: string; game_stage: string; }[];
-      
-      // Validate the game is in the pre_season stage
-      let isPreseason = false;
-      
-      if (Array.isArray(gameData)) {
-        isPreseason = gameData.length > 0 && gameData[0].game_stage === GAME_STAGE.PRE_SEASON;
-      } else {
-        isPreseason = gameData.game_stage === GAME_STAGE.PRE_SEASON;
-      }
-      
-      if (!isPreseason) {
-        throw new ApiError(400, 'Facility upgrades can only be done during the pre-season');
-      }
+      // Validate game stage is pre-season
+      this.validatePreSeasonStage(team);
       
       // Determine which facility to upgrade and calculate cost
-      let currentLevel: number;
-      let fieldToUpdate: string;
-      
-      if (facilityType === 'training') {
-        currentLevel = team.training_facility_level;
-        fieldToUpdate = 'training_facility_level';
-      } else if (facilityType === 'scout') {
-        currentLevel = team.scout_level;
-        fieldToUpdate = 'scout_level';
-      } else {
-        currentLevel = team.stadium_size;
-        fieldToUpdate = 'stadium_size';
-      }
+      const { currentLevel, fieldName, facilityName } = this.getFacilityFieldInfo(team, facilityType);
       
       // Check if the facility can be upgraded
       const upgradeCheck = FacilityUpgradeCalculator.canUpgrade(currentLevel, team.budget, facilityType);
-      
       if (!upgradeCheck.canUpgrade) {
         throw new ApiError(400, upgradeCheck.reason || 'Cannot upgrade facility');
       }
       
-      // Calculate the new budget after upgrade
+      // Calculate the new budget and level
       const newBudget = team.budget - upgradeCheck.cost!;
       const newLevel = currentLevel + 1;
       
-      // Update the team record
-      const { data: updatedTeam, error: updateError } = await supabaseAdmin
-        .from('teams')
-        .update({ 
-          [fieldToUpdate]: newLevel,
-          budget: newBudget
-        })
-        .eq('id', teamId)
-        .select()
-        .single();
+      // Update the team
+      const updatedTeam = await teamRepository.updateTeam(teamId, {
+        [fieldName]: newLevel,
+        budget: newBudget
+      });
       
-      if (updateError) {
-        console.error('Error upgrading facility:', updateError);
-        throw new ApiError(500, 'Failed to upgrade facility');
-      }
-      
-      let facilityName: string;
-      if (facilityType === 'training') {
-        facilityName = 'Training Facility';
-      } else if (facilityType === 'scout') {
-        facilityName = 'Scouting Department';
-      } else {
-        facilityName = 'Stadium';
-      }
-      
-      return {
-        success: true,
-        message: `Successfully upgraded ${facilityName} to level ${newLevel}`,
-        team: {
-          id: updatedTeam.id,
-          name: updatedTeam.name,
-          budget: updatedTeam.budget,
-          [fieldToUpdate]: updatedTeam[fieldToUpdate]
-        },
-        cost: upgradeCheck.cost!
-      };
+      return this.createUpgradeResponse(updatedTeam, facilityName, fieldName, newLevel, upgradeCheck.cost!);
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -525,6 +365,85 @@ class SeasonService {
       console.error('Error in upgradeFacility:', error);
       throw new ApiError(500, 'Failed to upgrade facility');
     }
+  }
+  
+  /**
+   * Validate the game is in pre-season stage
+   * @param team Team data with game information
+   */
+  private validatePreSeasonStage(team: any): void {
+    const gameData = team.games;
+    let isPreseason = false;
+    
+    if (Array.isArray(gameData)) {
+      isPreseason = gameData.length > 0 && gameData[0].game_stage === GAME_STAGE.PRE_SEASON;
+    } else {
+      isPreseason = gameData.game_stage === GAME_STAGE.PRE_SEASON;
+    }
+    
+    if (!isPreseason) {
+      throw new ApiError(400, 'Facility upgrades can only be done during the pre-season');
+    }
+  }
+  
+  /**
+   * Get facility field information
+   * @param team Team data
+   * @param facilityType Type of facility
+   * @returns Current level, field name, and display name
+   */
+  private getFacilityFieldInfo(
+    team: any, 
+    facilityType: 'training' | 'scout' | 'stadium'
+  ): { currentLevel: number; fieldName: string; facilityName: string } {
+    let currentLevel: number;
+    let fieldName: string;
+    let facilityName: string;
+    
+    if (facilityType === 'training') {
+      currentLevel = team.training_facility_level;
+      fieldName = 'training_facility_level';
+      facilityName = 'Training Facility';
+    } else if (facilityType === 'scout') {
+      currentLevel = team.scout_level;
+      fieldName = 'scout_level';
+      facilityName = 'Scouting Department';
+    } else {
+      currentLevel = team.stadium_size;
+      fieldName = 'stadium_size';
+      facilityName = 'Stadium';
+    }
+    
+    return { currentLevel, fieldName, facilityName };
+  }
+  
+  /**
+   * Create facility upgrade response
+   * @param updatedTeam Updated team data
+   * @param facilityName Display name of the facility
+   * @param fieldName Database field name
+   * @param newLevel New level after upgrade
+   * @param cost Cost of the upgrade
+   * @returns Formatted upgrade response
+   */
+  private createUpgradeResponse(
+    updatedTeam: any, 
+    facilityName: string, 
+    fieldName: string, 
+    newLevel: number, 
+    cost: number
+  ): UpgradeFacilityResponse {
+    return {
+      success: true,
+      message: `Successfully upgraded ${facilityName} to level ${newLevel}`,
+      team: {
+        id: updatedTeam.id,
+        name: updatedTeam.name,
+        budget: updatedTeam.budget,
+        [fieldName]: updatedTeam[fieldName]
+      },
+      cost: cost
+    };
   }
 }
 

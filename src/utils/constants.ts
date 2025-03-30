@@ -32,6 +32,12 @@ export const PLAYER_STATUS = {
 // Draft constants
 export const DRAFT_CONSTANTS = {
   REQUIRED_PLAYERS: 8,  // Number of players required to complete the draft
+  GENERATED_PLAYERS_COUNT: 24
+};
+
+// Team constants
+export const TEAM_CONSTANTS = {
+  MIN_PLAYERS: 8
 };
 
 // Training constants

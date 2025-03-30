@@ -249,7 +249,7 @@ export interface GetSeasonScoutingInfoResponse {
 }
 
 export interface GetScoutedPlayersResponse {
-  scouted_players: (ScoutedPlayer & { player: Player })[];
+  scouted_players: ScoutedPlayer[];
 }
 
 export type PlayerStatName = 

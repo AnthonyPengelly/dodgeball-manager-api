@@ -2,8 +2,9 @@ import { Request, Response } from 'express';
 import playerService from '../services/player.service';
 import gameService from '../services/game.service';
 import { ApiError } from '../middleware/error.middleware';
-import { CompleteDraftRequest, TrainPlayerRequest } from '../types';
-import { DRAFT_CONSTANTS, PLAYER_STATS } from '../utils/constants';
+import { CompleteDraftRequest } from '../types';
+import { DRAFT_CONSTANTS } from '../utils/constants';
+import draftService from '../services/draft.service';
 
 /**
  * Get draft players for the current game
@@ -28,7 +29,7 @@ export const getDraftPlayers = async (req: Request, res: Response) => {
     }
     
     // Get draft players for the current game
-    const draftPlayers = await playerService.getDraftPlayers(currentGame.game_id, token);
+    const draftPlayers = await draftService.getDraftPlayers(currentGame.game_id, token);
     
     res.status(200).json(draftPlayers);
   } catch (error) {
@@ -78,7 +79,7 @@ export const completeDraft = async (req: Request, res: Response) => {
     draftData.game_id = currentGame.game_id;
     
     // Complete the draft
-    const result = await playerService.completeDraft(currentGame.team_id, draftData, token);
+    const result = await draftService.completeDraft(currentGame.team_id, draftData, token);
     
     res.status(200).json(result);
   } catch (error) {

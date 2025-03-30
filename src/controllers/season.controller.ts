@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import seasonService from '../services/season.service';
-import playerService from '../services/player.service';
 import gameService from '../services/game.service';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ApiError } from '../middleware/error.middleware';
 import { PlayerStatName } from '../types';
+import trainingService from '../services/training.service';
+import scoutService from '../services/scout.service';
 
 class SeasonController {
   /**
@@ -61,7 +62,7 @@ class SeasonController {
       });
     }
     
-    const result = await playerService.trainPlayer(currentGame.team_id, {
+    const result = await trainingService.trainPlayer(currentGame.team_id, {
       player_id,
       stat_name: stat_name as PlayerStatName
     }, token);
@@ -138,7 +139,7 @@ class SeasonController {
     
     const { count } = req.body;
     
-    const result = await playerService.scoutPlayers(currentGame.team_id, { count }, token);
+    const result = await scoutService.scoutPlayers(currentGame.team_id, { count }, token);
     
     res.status(200).json(result);
   });
@@ -171,7 +172,7 @@ class SeasonController {
       });
     }
     
-    const result = await playerService.purchaseScoutedPlayer(currentGame.team_id, { scouted_player_id }, token);
+    const result = await scoutService.purchaseScoutedPlayer(currentGame.team_id, { scouted_player_id }, token);
     
     res.status(200).json(result);
   });
