@@ -13,8 +13,8 @@ import { onSameSideOfCourt } from './positionUtils';
  */
 export const processMovement = (
   player: MatchPlayer,
-  playerState: PlayerState,
-  gameState: GameState
+  playerState: Readonly<PlayerState>,
+  gameState: Readonly<GameState>
 ): number | null => {
   // Cannot move if eliminated
   if (playerState.eliminated || playerState.position === null) {
@@ -77,8 +77,8 @@ export const processMovement = (
   // Direction of movement
   const moveDirection = currentPosIndex < targetPosIndex ? 1 : -1;
   
-  // Maximum 2 steps in the correct direction
-  const maxSteps = Math.min(2, Math.abs(currentPosIndex - targetPosIndex));
+  // Maximum 3 steps in the correct direction
+  const maxSteps = Math.min(3, Math.abs(currentPosIndex - targetPosIndex));
   
   // Try each step size starting from largest
   for (let steps = maxSteps; steps > 0; steps--) {

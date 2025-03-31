@@ -8,14 +8,14 @@ import { onSameSideOfCourt, calculatePositionDistance } from '../utils/positionU
  * @returns The action to take
  */
 export const makeActionDecision = (context: DecisionContext): PlayerAction => {
-  const { player, playerState, gameState, previousTurn } = context;
+  const { playerState, gameState, previousTurn } = context;
   
   // Available actions based on current state
   const availableActions: PlayerAction[] = [];
   
-  // If player has a ball, they can throw it
+  // Always throw if possible
   if (playerState.ballId !== null) {
-    availableActions.push(PlayerAction.THROW);
+    return PlayerAction.THROW;
   }
   
   // Player can always prepare (dodge/catch bonus)

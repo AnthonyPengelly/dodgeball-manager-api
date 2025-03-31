@@ -7,6 +7,7 @@ import { makeReactionDecision } from '../decisions/reactionDecision';
 import { resolveAction } from '../actions/actionResolver';
 import { processMovement } from '../utils/movementHandler';
 import { findNearestFreeBall, findPlayerById } from '../utils/gameStateUtils';
+import { DeepPartial } from '../utils/deepMerge';
 
 /**
  * Simulates a single player's turn
@@ -17,18 +18,14 @@ import { findNearestFreeBall, findPlayerById } from '../utils/gameStateUtils';
  */
 export const simulateTurn = (
   player: MatchPlayer,
-  playerState: PlayerState,
+  playerState: Readonly<PlayerState>,
   gameState: Readonly<GameState>
 ): Turn => {
   // Initialize turn data with guaranteed endTurnGameStateUpdate
   const turn: Turn = {
     playerId: player.id,
     action: PlayerAction.PREPARE, // Default action
-    endTurnGameStateUpdate: {
-      playerState: {},
-      ballState: {},
-      completed: false
-    },
+    endTurnGameStateUpdate: {},
   };
   
   // Find the last turn this player took (if any)
@@ -36,7 +33,6 @@ export const simulateTurn = (
   
   // Make decision about what action to take
   const decisionContext = {
-    player,
     playerState,
     gameState,
     previousTurn
@@ -49,27 +45,22 @@ export const simulateTurn = (
   let targetPlayerId: string | null = null;
   let targetBallId: number | null = null;
   
-  // Create local copies to track changes
-  const updatedPlayerState = { ...playerState };
-  
   // Handle different action types
   switch (turn.action) {
     case PlayerAction.THROW:
       // Only proceed if player has a ball
-      if (updatedPlayerState.ballId !== null) {
+      if (playerState.ballId !== null) {
         targetPlayerId = selectThrowTarget(player, gameState);
-        targetBallId = updatedPlayerState.ballId;
+        targetBallId = playerState.ballId;
         turn.ballId = targetBallId;
         
         if (targetPlayerId) {
           // Target player makes a reaction decision
           const targetPlayer = findPlayerById(targetPlayerId, gameState);
-          const targetPlayerState = gameState.playerState[targetPlayerId];
           
-          if (targetPlayer && !targetPlayerState.eliminated) {
+          if (targetPlayer && !targetPlayer.eliminated) {
             const reactionContext = {
-              player: targetPlayer,
-              playerState: targetPlayerState,
+              playerState: targetPlayer,
               gameState,
               previousTurn: findPlayerPreviousTurn(targetPlayerId, gameState)
             };
@@ -78,7 +69,7 @@ export const simulateTurn = (
             turn.reaction = makeReactionDecision(reactionContext);
             
             // Resolve the throw and reaction
-            const throwResult = resolveAction(player, targetPlayer, gameState);
+            const throwResult = resolveAction(turn.reaction, player, targetPlayer, gameState);
             turn.actionResult = throwResult.result;
             
             // If the throw hit or was caught, handle eliminations
@@ -102,19 +93,13 @@ export const simulateTurn = (
         }
         
         // Player no longer has the ball
-        updatedPlayerState.ballId = null;
-        
-        // Update the player state in the turn update
-        if (!turn.endTurnGameStateUpdate.playerState) {
-          turn.endTurnGameStateUpdate.playerState = {};
-        }
-        turn.endTurnGameStateUpdate.playerState[player.id] = updatedPlayerState;
+        updatePlayerState(player.id, { ballId: null }, turn);
       }
       break;
       
     case PlayerAction.PICK_UP:
       // Find nearby free ball
-      targetBallId = findNearestFreeBall(updatedPlayerState.position, gameState);
+      targetBallId = findNearestFreeBall(playerState.position, gameState);
       
       if (targetBallId !== null) {
         // Pick up the ball
@@ -122,17 +107,13 @@ export const simulateTurn = (
         turn.actionResult = 'picked_up';
         
         // Update player state
-        updatedPlayerState.ballId = targetBallId;
-        if (!turn.endTurnGameStateUpdate.playerState) {
-          turn.endTurnGameStateUpdate.playerState = {};
-        }
-        turn.endTurnGameStateUpdate.playerState[player.id] = updatedPlayerState;
+        updatePlayerState(player.id, { ballId: targetBallId }, turn);
         
         // Update ball state
         const updatedBallState = { 
           ...gameState.ballState[targetBallId],
           status: BallStatus.HELD,
-          position: updatedPlayerState.position
+          position: playerState.position
         };
         if (!turn.endTurnGameStateUpdate.ballState) {
           turn.endTurnGameStateUpdate.ballState = {};
@@ -148,22 +129,16 @@ export const simulateTurn = (
   }
   
   // Handle player movement
-  const newPosition = processMovement(player, updatedPlayerState, gameState);
-  if (newPosition !== updatedPlayerState.position && newPosition !== null) {
+  const newPosition = processMovement(player, playerState, gameState);
+  if (newPosition !== playerState.position && newPosition !== null) {
     turn.newPosition = newPosition;
-    updatedPlayerState.position = newPosition;
-    
-    // Update player state in the turn update
-    if (!turn.endTurnGameStateUpdate.playerState) {
-      turn.endTurnGameStateUpdate.playerState = {};
-    }
-    turn.endTurnGameStateUpdate.playerState[player.id] = updatedPlayerState;
+    updatePlayerState(player.id, { position: newPosition }, turn);
     
     // If player has a ball, update its position too
-    if (updatedPlayerState.ballId !== null) {
-      const ballId = updatedPlayerState.ballId;
+    if (playerState.ballId !== null) {
+      const ballId = playerState.ballId;
       const updatedBallState = { 
-        ...gameState.ballState[ballId],
+        ...turn.endTurnGameStateUpdate.ballState?.[ballId],
         position: newPosition
       };
       if (!turn.endTurnGameStateUpdate.ballState) {
@@ -249,7 +224,7 @@ const handlePlayerReEnter = (isHomeCatcher: boolean, gameState: Readonly<GameSta
  */
 const handlePlayerEliminated = (playerId: string, gameState: Readonly<GameState>, turn: Turn): void => {
   // Create updated player state
-  const updatedPlayerState: Partial<PlayerState> = {
+  const updatedPlayerState: DeepPartial<PlayerState> = {
     ...turn.endTurnGameStateUpdate?.playerState?.[playerId],
     eliminated: true,
     position: null,
@@ -275,15 +250,6 @@ const handlePlayerEliminated = (playerId: string, gameState: Readonly<GameState>
       ...turn.endTurnGameStateUpdate.ballState[ballId],
       status: BallStatus.FREE
     };
-    
-    // Update player state to no longer have ball
-    if (!turn.endTurnGameStateUpdate.playerState) {
-      turn.endTurnGameStateUpdate.playerState = {};
-    }
-    turn.endTurnGameStateUpdate.playerState[playerId] = {
-      ...turn.endTurnGameStateUpdate.playerState[playerId],
-      ballId: null
-    };
   }
 };
 
@@ -297,15 +263,14 @@ const handleThrowResult = (
   gameState: Readonly<GameState>,
   turn: Turn
 ): void => {
-  let updatedBallState: BallState;
+  let updatedBallState: DeepPartial<BallState> = {};
   
   switch (result) {
     case 'hit':
-      // Ball goes out of play temporarily
       updatedBallState = {
         ...turn.endTurnGameStateUpdate?.ballState?.[ballId],
         status: BallStatus.FREE,
-        position: null
+        position: gameState.playerState[targetPlayerId].position
       };
       break;
       
@@ -347,4 +312,14 @@ const handleThrowResult = (
     turn.endTurnGameStateUpdate.ballState = {};
   }
   turn.endTurnGameStateUpdate.ballState[ballId] = updatedBallState;
+};
+
+const updatePlayerState = (playerId: string, playerState: DeepPartial<PlayerState>, turn: Turn): void => {
+  if (!turn.endTurnGameStateUpdate.playerState) {
+    turn.endTurnGameStateUpdate.playerState = {};
+  }
+  turn.endTurnGameStateUpdate.playerState[playerId] = {
+    ...turn.endTurnGameStateUpdate.playerState[playerId],
+    ...playerState
+  }
 };

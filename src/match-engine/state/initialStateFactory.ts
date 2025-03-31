@@ -10,7 +10,9 @@ import { BallState, BallStatus, GameState, MatchState, PlayerState, RoundState, 
 export const createInitialMatchState = (homeTeam: Team, awayTeam: Team): MatchState => {  
   return {
     currentGame: 1,
-    completed: false
+    completed: false,
+    homeScore: 0,
+    awayScore: 0,
   };
 };
 

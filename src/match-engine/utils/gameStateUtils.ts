@@ -1,6 +1,5 @@
-import { BallStatus, GameState, MatchPlayer } from '../types';
+import { BallStatus, GameState, PlayerState } from '../types';
 import { onSameSideOfCourt, calculatePositionDistance } from './positionUtils';
-import { MATCH_CONSTANTS } from '../../utils/constants';
 
 /**
  * Count the number of active (non-eliminated) players for a team
@@ -27,7 +26,7 @@ export const isGameComplete = (gameState: Readonly<GameState>): boolean => {
 /**
  * Find a player by ID
  */
-export const findPlayerById = (playerId: string, gameState: Readonly<GameState>): MatchPlayer | null => {
+export const findPlayerById = (playerId: string, gameState: Readonly<GameState>): PlayerState | null => {
   const player = gameState.playerState[playerId];
   if (!player) return null;
   return player;

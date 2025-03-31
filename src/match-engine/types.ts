@@ -47,6 +47,8 @@ export interface Turn {
 export interface MatchState {
   currentGame: number;
   completed: boolean;
+  homeScore: number;
+  awayScore: number;
 }
 
 export enum CourtSide {
@@ -113,8 +115,7 @@ export interface MatchPlayer {
 }
 
 export interface DecisionContext {
-  player: MatchPlayer;
-  playerState: PlayerState;
+  playerState: Readonly<PlayerState>;
   gameState: GameState;
   previousTurn: Turn | null;
 }

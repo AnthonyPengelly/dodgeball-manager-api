@@ -33,7 +33,7 @@ export const simulateRound = (
   };
   
   // Current round state that will be updated throughout the round
-  const roundState: RoundState = { ...initialRoundState };
+  const roundState: RoundState = JSON.parse(JSON.stringify(initialRoundState));
   
   // Execute all turns for this round
   for (const playerId of roundState.turnOrder) {

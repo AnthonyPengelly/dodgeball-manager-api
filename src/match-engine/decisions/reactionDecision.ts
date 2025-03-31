@@ -8,7 +8,7 @@ import { DecisionContext, PlayerReaction } from '../types';
  * @returns The reaction the player will take
  */
 export const makeReactionDecision = (context: DecisionContext): PlayerReaction => {
-  const { player, playerState, gameState: match, previousTurn } = context;
+  const { playerState, gameState: match, previousTurn } = context;
   
   // All reaction options are always available
   const availableReactions = [

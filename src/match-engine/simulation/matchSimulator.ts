@@ -2,6 +2,7 @@ import { Game, MatchSimulation, MatchState, Team } from '../types';
 import { simulateGame } from './gameSimulator';
 import { createInitialMatchState } from '../state/initialStateFactory';
 import { MATCH_CONSTANTS } from '../../utils/constants';
+import { deepMerge } from '../utils/deepMerge';
 
 /**
  * Simulates a complete dodgeball match between two teams
@@ -25,7 +26,7 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team): MatchSimulation =
   };
 
   // Current state that will be updated throughout the match
-  const matchState: MatchState = { ...initialMatchState };
+  const matchState: MatchState = JSON.parse(JSON.stringify(initialMatchState));
   
   // Play all three games (best of 3, but always play all 3)
   for (let gameNumber = 1; gameNumber <= MATCH_CONSTANTS.GAMES_PER_MATCH; gameNumber++) {
@@ -35,15 +36,12 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team): MatchSimulation =
     
     // Update match state with end game state
     if (game.endGameMatchStateUpdate) {
-      Object.assign(matchState, game.endGameMatchStateUpdate);
+      deepMerge(matchState, game.endGameMatchStateUpdate);
     }
     
     // Update match score based on game results
-    if (game.winner === homeTeam.id) {
-      match.homeScore++;
-    } else if (game.winner === awayTeam.id) {
-      match.awayScore++;
-    }
+    match.homeScore = matchState.homeScore;
+    match.awayScore = matchState.awayScore;
   }
   
   // Determine overall match winner

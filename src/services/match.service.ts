@@ -208,6 +208,8 @@ class MatchService {
         {
           homeTeamName: homeTeamName || 'Unknown Team',
           awayTeamName: awayTeamName || 'Unknown Team',
+          userHomeScore: userHomeScore,
+          userAwayScore: userAwayScore,
           otherHomeTeamName: otherHomeTeamName || 'Unknown Team',
           otherAwayTeamName: otherAwayTeamName || 'Unknown Team',
           otherHomeScore: otherHomeScore,
@@ -486,6 +488,8 @@ class MatchService {
     teamInfo: {
       homeTeamName: string;
       awayTeamName: string;
+      userHomeScore: number;
+      userAwayScore: number;
       otherHomeTeamName: string;
       otherAwayTeamName: string;
       otherHomeScore: number;
@@ -497,9 +501,21 @@ class MatchService {
       success: true,
       message: 'Match played successfully',
       match: {
-        ...userFixture,
+        id: userFixture.id,
+        game_id: userFixture.game_id,
+        home_team_id: userFixture.home_team_id,
+        away_team_id: userFixture.away_team_id,
+        home_team_type: userFixture.home_team_type,
+        away_team_type: userFixture.away_team_type,
         home_team_name: teamInfo.homeTeamName,
-        away_team_name: teamInfo.awayTeamName
+        away_team_name: teamInfo.awayTeamName,
+        home_score: teamInfo.userHomeScore,
+        away_score: teamInfo.userAwayScore,
+        match_day: userFixture.match_day,
+        season: userFixture.season,
+        status: 'completed',
+        played_at: new Date().toISOString(),
+        created_at: userFixture.created_at
       },
       match_day: matchDay,
       other_match: {

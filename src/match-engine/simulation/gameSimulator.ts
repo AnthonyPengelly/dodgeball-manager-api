@@ -33,7 +33,7 @@ export const simulateGame = (
   };
   
   // Current game state that will be updated throughout the game
-  const gameState: GameState = { ...initialGameState };
+  const gameState: GameState = JSON.parse(JSON.stringify(initialGameState));
   
   // First, simulate the initial round for ball distribution
   const initialRound = simulateInitialRound(homeTeam, awayTeam, gameState);
@@ -56,16 +56,20 @@ export const simulateGame = (
   };
 
   // Update player counts
-  game.homeTeamPlayersRemaining = Object.values(gameState.playerState).filter(p => p.isHome).length;
-  game.awayTeamPlayersRemaining = Object.values(gameState.playerState).filter(p => !p.isHome).length;
+  game.homeTeamPlayersRemaining = Object.values(gameState.playerState).filter(p => p.isHome && !p.eliminated).length;
+  game.awayTeamPlayersRemaining = Object.values(gameState.playerState).filter(p => !p.isHome && !p.eliminated).length;
   
   // Check win condition
-  if (game.homeTeamPlayersRemaining === 0 && game.awayTeamPlayersRemaining === 0) {
+  if (game.homeTeamPlayersRemaining === game.awayTeamPlayersRemaining) {
     game.winner = 'tie';
-  } else if (game.homeTeamPlayersRemaining === 0) {
+    game.endGameMatchStateUpdate.homeScore = matchState.homeScore + 1;
+    game.endGameMatchStateUpdate.awayScore = matchState.awayScore + 1;
+  } else if (game.homeTeamPlayersRemaining < game.awayTeamPlayersRemaining) {
     game.winner = awayTeam.id;
-  } else if (game.awayTeamPlayersRemaining === 0) {
+    game.endGameMatchStateUpdate.awayScore = matchState.awayScore + 1;
+  } else {
     game.winner = homeTeam.id;
+    game.endGameMatchStateUpdate.homeScore = matchState.homeScore + 1;
   }
 
   return game;

@@ -1,4 +1,4 @@
-import { GameState, MatchPlayer } from '../types';
+import { GameState, MatchPlayer, PlayerReaction } from '../types';
 
 /**
  * Resolves the outcome of a player's action (throwing)
@@ -8,6 +8,7 @@ import { GameState, MatchPlayer } from '../types';
  * @returns Result of the action
  */
 export const resolveAction = (
+  reaction: PlayerReaction,
   actor: MatchPlayer, 
   target: MatchPlayer, 
   gameState: GameState
@@ -16,22 +17,32 @@ export const resolveAction = (
   // The larger of the actor's throwing vs target's reaction stat, plus a random modifier
   
   // Base stat for throw effectiveness
-  const throwEffectiveness = actor.throwing + (Math.random() * 4 - 2); // Random -2 to +2
+  const throwEffectiveness = actor.throwing + (Math.random() * 2 - 1); // Random -1 to +1
+  const reactionEffectiveness = getBaseReactionEffectiveness(reaction, target) + (Math.random() * 2 - 1); // Random -1 to +1
   
-  // Target's reaction effectiveness (based on what they chose)
-  // We'll determine this in the reaction resolver
-  
-  // For now, randomly determine result based on throwing effectiveness
-  const randomValue = Math.random();
-  
-  // todo Change to use stats
-  if (randomValue < 0.3) {
+  if (throwEffectiveness > reactionEffectiveness) {
     return { result: 'hit' };
-  } else if (randomValue < 0.5) { 
-    return { result: 'caught' };
-  } else if (randomValue < 0.7) {
-    return { result: 'blocked' };
-  } else {
-    return { result: 'miss' };
   }
+  
+  switch (reaction) {
+    case PlayerReaction.CATCH:
+      return { result: 'caught' };
+    case PlayerReaction.DODGE:
+      return { result: 'miss' };
+    case PlayerReaction.BLOCK:
+      return { result: 'blocked' };
+  }
+  return { result: 'miss' };
+};
+
+const getBaseReactionEffectiveness = (reaction: PlayerReaction, target: MatchPlayer): number => {
+  switch (reaction) {
+    case PlayerReaction.CATCH:
+      return target.catching;
+    case PlayerReaction.DODGE:
+      return target.dodging;
+    case PlayerReaction.BLOCK:
+      return target.blocking;
+  }
+  return 0;
 };
