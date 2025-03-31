@@ -4,13 +4,15 @@
   "description": "Dodgeball manager game API",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsoa spec-and-routes && tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
+    "dev": "tsoa spec-and-routes && ts-node src/index.ts",
     "watch": "ts-node-dev --respawn --transpile-only src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed": "echo \"Applying seed data - replace with actual seed command\" && exit 0",
-    "migrate": "echo \"Applying migrations - replace with actual migration command\" && exit 0"
+    "migrate": "echo \"Applying migrations - replace with actual migration command\" && exit 0",
+    "swagger": "tsoa spec",
+    "routes": "tsoa routes"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +23,8 @@
     "@types/node": "^22.13.14",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -30,6 +34,7 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "ts-node": "^10.9.2",
+    "tsoa": "^6.6.0",
     "typescript": "^5.8.2"
   },
   "devDependencies": {

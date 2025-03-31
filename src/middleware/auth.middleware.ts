@@ -1,38 +1,36 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request } from 'express';
 import { supabaseAdmin } from '../utils/supabase';
 import { User } from '../types';
+import { ApiError } from './error.middleware';
 
-// Middleware to verify JWT token and set user info in request
-export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    // Get the authorization header
-    const authHeader = req.headers.authorization;
-    
+// Function for tsoa authentication
+export async function expressAuthentication(
+  request: Request,
+  securityName: string,
+): Promise<User> {
+  if (securityName === 'bearerAuth') {
+    const authHeader = request.headers.authorization;
+      
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ message: 'Unauthorized: No token provided' });
-      return;
+      throw new ApiError(401, 'Unauthorized: No token provided');
     }
-    
-    // Extract the token
+      
     const token = authHeader.split(' ')[1];
-    
-    // Verify the JWT token with Supabase
+      
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-    
+      
     if (error || !user) {
-      res.status(401).json({ message: 'Unauthorized: Invalid token' });
-      return;
+      throw new ApiError(401, 'Unauthorized: Invalid token');
     }
-    
+          
     // Set the authenticated user in the request
-    req.user = user;
-    
-    next();
-  } catch (error) {
-    console.error('Auth middleware error:', error);
-    res.status(500).json({ message: 'Internal server error during authentication' });
+    request.user = user;
+          
+    return user;
   }
-};
+  
+  throw new ApiError(401, 'Unauthorized: Invalid security name');
+}
 
 // Extend Express Request type to include user
 declare global {

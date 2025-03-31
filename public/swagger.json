@@ -1,0 +1,286 @@
+{
+	"openapi": "3.0.0",
+	"components": {
+		"examples": {},
+		"headers": {},
+		"parameters": {},
+		"requestBodies": {},
+		"responses": {},
+		"schemas": {
+			"FixtureModel": {
+				"description": "Fixture with team names",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "Fixture ID",
+						"example": "550e8400-e29b-41d4-a716-446655440000"
+					},
+					"game_id": {
+						"type": "string",
+						"description": "Game ID",
+						"example": "550e8400-e29b-41d4-a716-446655440001"
+					},
+					"season": {
+						"type": "number",
+						"format": "double",
+						"description": "Season number",
+						"example": 1
+					},
+					"match_day": {
+						"type": "number",
+						"format": "double",
+						"description": "Match day number",
+						"example": 3
+					},
+					"home_team_id": {
+						"type": "string",
+						"description": "Home team ID",
+						"example": "550e8400-e29b-41d4-a716-446655440002"
+					},
+					"away_team_id": {
+						"type": "string",
+						"description": "Away team ID",
+						"example": "550e8400-e29b-41d4-a716-446655440003"
+					},
+					"home_team_type": {
+						"type": "string",
+						"enum": [
+							"user",
+							"opponent"
+						],
+						"description": "Home team type",
+						"example": "user"
+					},
+					"away_team_type": {
+						"type": "string",
+						"enum": [
+							"user",
+							"opponent"
+						],
+						"description": "Away team type",
+						"example": "opponent"
+					},
+					"home_score": {
+						"type": "number",
+						"format": "double",
+						"description": "Home team score",
+						"example": 5
+					},
+					"away_score": {
+						"type": "number",
+						"format": "double",
+						"description": "Away team score",
+						"example": 3
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"scheduled",
+							"completed"
+						],
+						"description": "Match status",
+						"example": "completed"
+					},
+					"played_at": {
+						"type": "string",
+						"description": "When the match was played",
+						"example": "2025-03-31T14:30:00Z"
+					},
+					"created_at": {
+						"type": "string",
+						"description": "When the fixture was created",
+						"example": "2025-03-30T10:00:00Z"
+					},
+					"home_team_name": {
+						"type": "string",
+						"description": "Home team name",
+						"example": "Dodgeball Dynamos"
+					},
+					"away_team_name": {
+						"type": "string",
+						"description": "Away team name",
+						"example": "Throwback Titans"
+					}
+				},
+				"required": [
+					"id",
+					"game_id",
+					"season",
+					"match_day",
+					"home_team_id",
+					"away_team_id",
+					"home_team_type",
+					"away_team_type",
+					"status",
+					"created_at"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LeagueTableEntryModel": {
+				"description": "League table entry for tsoa documentation",
+				"properties": {
+					"team_id": {
+						"type": "string",
+						"description": "Team ID",
+						"example": "550e8400-e29b-41d4-a716-446655440000"
+					},
+					"team_name": {
+						"type": "string",
+						"description": "Team name",
+						"example": "Dodgeball Dynamos"
+					},
+					"team_type": {
+						"type": "string",
+						"enum": [
+							"user",
+							"opponent"
+						],
+						"description": "Type of team",
+						"example": "user"
+					},
+					"played": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of matches played",
+						"example": 5
+					},
+					"won": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of matches won",
+						"example": 3
+					},
+					"lost": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of matches lost",
+						"example": 2
+					},
+					"points": {
+						"type": "number",
+						"format": "double",
+						"description": "Total points",
+						"example": 9
+					}
+				},
+				"required": [
+					"team_id",
+					"team_name",
+					"team_type",
+					"played",
+					"won",
+					"lost",
+					"points"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GetLeagueResponseModel": {
+				"description": "League data response",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Whether the request was successful",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "League data retrieved successfully"
+					},
+					"season": {
+						"type": "number",
+						"format": "double",
+						"description": "Season number",
+						"example": 1
+					},
+					"fixtures": {
+						"items": {
+							"$ref": "#/components/schemas/FixtureModel"
+						},
+						"type": "array",
+						"description": "List of fixtures"
+					},
+					"table": {
+						"items": {
+							"$ref": "#/components/schemas/LeagueTableEntryModel"
+						},
+						"type": "array",
+						"description": "League table"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"season",
+					"fixtures",
+					"table"
+				],
+				"type": "object",
+				"additionalProperties": false
+			}
+		},
+		"securitySchemes": {
+			"bearerAuth": {
+				"type": "http",
+				"scheme": "bearer",
+				"bearerFormat": "JWT"
+			}
+		}
+	},
+	"info": {
+		"title": "dodgeball-manager-api",
+		"version": "1.0.0",
+		"description": "Dodgeball manager game API",
+		"license": {
+			"name": "ISC"
+		},
+		"contact": {}
+	},
+	"paths": {
+		"/leagues": {
+			"get": {
+				"operationId": "GetLeague",
+				"responses": {
+					"200": {
+						"description": "League data retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GetLeagueResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get the league data for the current or specified season",
+				"summary": "Get league data",
+				"tags": [
+					"Leagues"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "season",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "/api"
+		}
+	]
+}

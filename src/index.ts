@@ -6,12 +6,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
-import apiRoutes from './routes';
-import { specs } from './utils/swagger';
 import config from './config/config';
 import { errorHandler } from './middleware/error.middleware';
 import logger from './utils/logger';
 import { validateEnv } from './utils/env-validator';
+import { RegisterRoutes } from './openapi/routes';
 
 // Validate environment variables
 if (!validateEnv()) {
@@ -31,11 +30,12 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Mount API routes
-app.use('/api', apiRoutes);
+// Setup tsoa routes
+RegisterRoutes(app);
 
-// Swagger documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+// Swagger documentation - use the generated swagger.json file
+const swaggerDocument = require('../public/swagger.json');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Error handling middleware
 app.use(errorHandler);
