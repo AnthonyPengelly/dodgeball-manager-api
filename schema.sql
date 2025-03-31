@@ -124,6 +124,20 @@ CREATE TABLE IF NOT EXISTS season_opponent_teams (
   CONSTRAINT unique_opponent_team_per_season UNIQUE (game_id, season, opponent_team_id)
 );
 
+-- Opponent team players join table
+CREATE TABLE IF NOT EXISTS opponent_team_players (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  opponent_team_id UUID NOT NULL REFERENCES opponent_teams(id) ON DELETE CASCADE,
+  player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  season INT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Add constraint to ensure uniqueness
+  CONSTRAINT unique_player_opponent_team_season UNIQUE (opponent_team_id, player_id, season)
+);
+
 -- Fixtures table
 CREATE TABLE IF NOT EXISTS fixtures (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -154,6 +168,7 @@ ALTER TABLE transfer_list ENABLE ROW LEVEL SECURITY;
 ALTER TABLE opponent_teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fixtures ENABLE ROW LEVEL SECURITY;
 ALTER TABLE season_opponent_teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE opponent_team_players ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
 -- Teams: users can only see and modify their own teams
@@ -187,6 +202,12 @@ CREATE POLICY opponent_teams_user_policy ON opponent_teams
 
 -- Season opponent teams: users can only see season opponent teams in games they have teams in
 CREATE POLICY season_opponent_teams_user_policy ON season_opponent_teams
+  USING (game_id IN (
+    SELECT game_id FROM teams WHERE owner_id = auth.uid()
+  ));
+
+-- Opponent team players: users can only see opponent team players in games they have teams in
+CREATE POLICY opponent_team_players_user_policy ON opponent_team_players
   USING (game_id IN (
     SELECT game_id FROM teams WHERE owner_id = auth.uid()
   ));

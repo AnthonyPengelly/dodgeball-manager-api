@@ -1,5 +1,5 @@
 import { ApiError } from '../middleware/error.middleware';
-import { EndSeasonResponse, PlayMatchResponse } from '../types';
+import { EndSeasonResponse, PlayerStatus, PlayMatchResponse } from '../types';
 import { getFixturesByMatchDay, getSeasonFixtures, updateFixture, getTeamName, addTeamToNextSeason } from '../repositories/matchRepository';
 import { getGameById, updateGame } from '../repositories/gameRepository';
 import { getTeamByGameId } from '../repositories/teamRepository';
@@ -7,8 +7,13 @@ import { getIncompleteFixtures } from '../repositories/fixtureRepository';
 import { updateTeamFinances } from '../repositories/budgetRepository';
 import { generateMatchScore, checkTeamPromotion } from '../utils/matchUtils';
 import { calculateStadiumIncome } from '../utils/seasonUtils';
-import leagueService from './league.service';
+import { getOpponentTeamPlayers, getOpponentTeamWithPlayers, addPlayersToOpponentTeam } from '../repositories/opponentTeamRepository';
 import { getTeamPlayers } from '../repositories/playerRepository';
+import leagueService from './league.service';
+import * as playerRepository from '../repositories/playerRepository';
+// Import match engine components
+import { runMatchSimulation, convertToMatchTeams } from '../match-engine';
+import { PlayerGenerator } from '../utils/player-generator';
 
 class MatchService {
   /**
@@ -50,13 +55,114 @@ class MatchService {
       // Find fixtures for this match day
       const { userFixture, otherFixture } = this.findMatchDayFixtures(fixtures, userTeam.id);
       
-      // Generate and update scores for user's fixture
-      const { homeScore: userHomeScore, awayScore: userAwayScore } = generateMatchScore();
-      const updatedUserFixture = await this.updateFixtureWithResult(
-        userFixture.id, 
-        userHomeScore, 
-        userAwayScore
-      );
+      // For user's fixture: Full match simulation with match engine
+      let userMatchSimulation = null;
+      let userHomeScore = 0;
+      let userAwayScore = 0;
+
+      if (userFixture) {
+        // Get detailed team information for match simulation
+        const isHomeTeam = userFixture.home_team_id === userTeam.id;
+        
+        // Ensure opponent team has 8 players
+        if (isHomeTeam) {
+          await this.ensureOpponentTeamHasPlayers(
+            gameId, 
+            userFixture.away_team_id, 
+            game.season, 
+            token
+          );
+        } else {
+          await this.ensureOpponentTeamHasPlayers(
+            gameId, 
+            userFixture.home_team_id, 
+            game.season, 
+            token
+          );
+        }
+        
+        // Get team players for match simulation
+        const userTeamPlayers = await getTeamPlayers(gameId, token);
+        
+        let opponentTeamId: string;
+        let opponentTeamData: any;
+        
+        if (isHomeTeam) {
+          opponentTeamId = userFixture.away_team_id;
+          opponentTeamData = await this.getOpponentTeamData(
+            opponentTeamId, 
+            userFixture.away_team_type, 
+            game.season, 
+            token
+          );
+        } else {
+          opponentTeamId = userFixture.home_team_id;
+          opponentTeamData = await this.getOpponentTeamData(
+            opponentTeamId, 
+            userFixture.home_team_type, 
+            game.season, 
+            token
+          );
+        }
+        
+        // Get team names
+        const homeTeamName = await getTeamName(
+          userFixture.home_team_id, 
+          userFixture.home_team_type, 
+          token
+        );
+        
+        const awayTeamName = await getTeamName(
+          userFixture.away_team_id, 
+          userFixture.away_team_type, 
+          token
+        );
+        
+        // Prepare teams for match simulation
+        const { homeTeam, awayTeam } = isHomeTeam 
+          ? convertToMatchTeams(
+              userTeam.id, 
+              homeTeamName || 'Home Team', 
+              userTeamPlayers, 
+              opponentTeamId, 
+              awayTeamName || 'Away Team', 
+              opponentTeamData.players
+            )
+          : convertToMatchTeams(
+              opponentTeamId, 
+              homeTeamName || 'Home Team', 
+              opponentTeamData.players, 
+              userTeam.id, 
+              awayTeamName || 'Away Team', 
+              userTeamPlayers
+            );
+        
+        // Run the match simulation
+        userMatchSimulation = runMatchSimulation(homeTeam, awayTeam);
+        
+        // Extract scores from the simulation
+        userHomeScore = userMatchSimulation.homeScore;
+        userAwayScore = userMatchSimulation.awayScore;
+        
+        // Update fixture with the results
+        await this.updateFixtureWithResult(
+          userFixture.id, 
+          userHomeScore, 
+          userAwayScore
+        );
+      } else {
+        // Fallback to random score if no user fixture (shouldn't happen)
+        const { homeScore, awayScore } = generateMatchScore();
+        userHomeScore = homeScore;
+        userAwayScore = awayScore;
+        if (userFixture) {
+          await this.updateFixtureWithResult(
+            userFixture.id, 
+            homeScore, 
+            awayScore
+          );
+        }
+      }
       
       // Generate and update scores for other fixture
       const { homeScore: otherHomeScore, awayScore: otherAwayScore } = generateMatchScore();
@@ -96,7 +202,7 @@ class MatchService {
       
       // Construct and return response
       return this.constructPlayMatchResponse(
-        updatedUserFixture,
+        userFixture,
         otherFixture,
         nextMatchDay,
         {
@@ -106,7 +212,8 @@ class MatchService {
           otherAwayTeamName: otherAwayTeamName || 'Unknown Team',
           otherHomeScore: otherHomeScore,
           otherAwayScore: otherAwayScore
-        }
+        },
+        userMatchSimulation // Pass the full match simulation data
       );
     } catch (error) {
       if (error instanceof ApiError) {
@@ -114,6 +221,87 @@ class MatchService {
       }
       console.error('Error in playNextMatch:', error);
       throw new ApiError(500, 'Failed to play next match');
+    }
+  }
+
+  /**
+   * Ensures an opponent team has at least 8 players
+   * Generates new players if needed based on season tier
+   * 
+   * @param gameId The game ID
+   * @param opponentTeamId The opponent team ID
+   * @param season The current season number
+   * @param token JWT token
+   */
+  private async ensureOpponentTeamHasPlayers(
+    gameId: string,
+    opponentTeamId: string,
+    season: number,
+    token: string
+  ): Promise<void> {
+    try {
+      // Check if team already has players
+      const existingPlayerIds = await getOpponentTeamPlayers(opponentTeamId, season, token);
+      
+      // If team already has at least 8 players, we're good
+      if (existingPlayerIds.length >= 8) {
+        return;
+      }
+      
+      // Calculate how many more players we need
+      const playersNeeded = 8 - existingPlayerIds.length;
+      
+      // Generate new players based on season tier (+/- 1)
+      // Generate players
+      const generatedPlayers = PlayerGenerator.generatePlayersInTierRange(
+        playersNeeded,
+        Math.max(1, season - 1),
+        Math.min(5, season + 1)
+      );
+      
+      // Prepare players for database insertion
+      const playersToInsert = generatedPlayers.map(player => ({
+        game_id: gameId,
+        name: player.name,
+        status: 'opponent' as PlayerStatus,
+        tier: player.tier,
+        potential_tier: player.potentialTier,
+        ...player.stats,
+        ...player.potentialStats
+      }));
+
+      const players = await playerRepository.createPlayers(playersToInsert);
+      const playerIds = players.map(player => player.id);
+      // Associate players with the opponent team
+      await addPlayersToOpponentTeam(gameId, opponentTeamId, playerIds, season);
+    } catch (error) {
+      console.error('Error ensuring opponent team has players:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get opponent team data including players
+   * 
+   * @param teamId The team ID
+   * @param teamType The team type (user or opponent)
+   * @param season The current season
+   * @param token JWT token
+   * @returns The team with players
+   */
+  private async getOpponentTeamData(
+    teamId: string,
+    teamType: string,
+    season: number,
+    token: string
+  ): Promise<any> {
+    if (teamType === 'opponent') {
+      // Get opponent team with players
+      return await getOpponentTeamWithPlayers(teamId, season, token);
+    } else {
+      // Get user team players
+      const players = await getTeamPlayers(teamId, token);
+      return { id: teamId, players };
     }
   }
 
@@ -302,7 +490,8 @@ class MatchService {
       otherAwayTeamName: string;
       otherHomeScore: number;
       otherAwayScore: number;
-    }
+    },
+    simulatedMatch?: any
   ): PlayMatchResponse {
     return {
       success: true,
@@ -329,7 +518,8 @@ class MatchService {
         status: 'completed',
         played_at: new Date().toISOString(),
         created_at: otherFixture.created_at
-      }
+      },
+      simulated_match: simulatedMatch
     };
   }
 

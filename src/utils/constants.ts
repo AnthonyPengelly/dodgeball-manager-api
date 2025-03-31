@@ -2,6 +2,14 @@
 export const API_PREFIX = '/api';
 export const API_VERSION = 'v1';
 
+export const MATCH_CONSTANTS = {
+  PLAYERS_PER_TEAM: 6,
+  NUMBER_OF_BALLS: 6,
+  GAMES_PER_MATCH: 3,
+  MAX_ROUNDS_PER_GAME: 50,
+  MAX_PICK_UP_DISTANCE: 2
+}
+
 // Game constants
 export const GAME_STATUS = {
   PENDING: 'pending',

@@ -395,6 +395,7 @@ export interface PlayMatchResponse {
   match: EnhancedFixture;
   match_day: number;
   other_match?: EnhancedFixture;
+  simulated_match?: any; // Full match simulation data from the match engine
 }
 
 export interface EndSeasonResponse {
