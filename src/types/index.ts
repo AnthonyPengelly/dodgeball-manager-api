@@ -15,11 +15,13 @@ export interface Game {
   id: string;
   season: number;
   match_day: number;
-  status: 'pending' | 'in_progress' | 'completed';
+  status: GameStatus;
   game_stage: GameStage;
   created_at?: string;
   updated_at?: string;
 }
+
+export type GameStatus = 'pending' | 'in_progress' | 'completed';
 
 export type GameStage = 'draft' | 'pre_season' | 'regular_season' | 'post_season' | 'off_season';
 
@@ -63,7 +65,7 @@ export interface CreateTeamResponse {
   game_id: string;
   game_season: number;
   game_match_day: number;
-  game_status: string;
+  game_status: GameStatus;
   game_stage: GameStage;
 }
 

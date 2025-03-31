@@ -1,4 +1,5 @@
-import { Game, TeamWithGame, CurrentGameResponse } from '../types';
+import { CurrentGameResponse } from '../models/GameModels';
+import { Game, TeamWithGame } from '../types';
 
 /**
  * Format game data with team information into the standard response format

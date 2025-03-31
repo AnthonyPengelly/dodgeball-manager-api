@@ -1,4 +1,5 @@
-import { CurrentGameResponse, Game, CreateTeamRequest, CreateTeamResponse, CancelGameResponse, StartMainSeasonResponse } from '../types';
+import { CurrentGameResponse, CreateTeamResponse, CancelGameResponseModel, StartMainSeasonResponse } from '../models/GameModels';
+import { Fixture, Game, OpponentTeam } from '../types';
 import { GAME_STATUS, GAME_STAGE } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import leagueService from './league.service';
@@ -36,112 +37,92 @@ class GameService {
    * @param token JWT token
    * @returns The game associated with the team
    */
-  async getGameByTeamId(teamId: string, token: string) {
+  async getGameByTeamId(teamId: string, token: string): Promise<Game | null> {
     return gameRepository.getGameByTeamId(teamId, token);
   }
 
   /**
    * Create a new team and game for the authenticated user
    * @param userId The authenticated user's ID
+   * @param teamName The name of the team to create
    * @param token The JWT token of the authenticated user
-   * @param teamData The team data to create
    * @returns The created team and game data
    */
-  async createTeam(userId: string, token: string, teamData: CreateTeamRequest): Promise<CreateTeamResponse> {
+  async createTeam(userId: string, teamName: string, token: string): Promise<CreateTeamResponse> {
     try {
-      // First check if the user already has an active game
-      const currentGame = await this.getCurrentGame(userId, token);
-      if (currentGame) {
-        throw new ApiError(400, 'You already have an active game. Please complete or cancel it before starting a new one.');
+      // Check if user already has an active game
+      const existingGame = await this.getCurrentGame(userId, token);
+      
+      if (existingGame) {
+        throw new ApiError(400, 'User already has an active game');
       }
       
       // Create a new game
-      const newGame = await gameRepository.createGame();
+      const game = await gameRepository.createGame();
       
-      // Create the team linked to the new game
+      // Create the team
+      const team = await teamRepository.createTeam({
+        name: teamName,
+        owner_id: userId,
+        game_id: game.id,
+        stadium_size: 1,
+        training_facility_level: 1,
+        scout_level: 1,
+        budget: 100
+      }, token);
+      
+      // Initialize the draft (assuming this is handled by the draft service)
       try {
-        const newTeam = await teamRepository.createTeam({
-          name: teamData.name,
-          owner_id: userId,
-          game_id: newGame.id,
-          stadium_size: 1, 
-          training_facility_level: 1,
-          scout_level: 1,
-          budget: 100 
-        }, token);
-        
-        // Generate draft players for the new game
-        try {
-          await draftService.generateDraftPlayers(newGame.id);
-        } catch (error) {
-          console.error('Error generating draft players:', error);
-          // Continue even if player generation fails, as the team and game were created successfully
-        }
-        
-        return {
-          team_id: newTeam.id,
-          team_name: newTeam.name,
-          game_id: newGame.id,
-          game_season: newGame.season,
-          game_match_day: newGame.match_day,
-          game_status: newGame.status,
-          game_stage: newGame.game_stage
-        };
+        await draftService.generateDraftPlayers(game.id);
       } catch (error) {
-        console.error('Error creating team:', error);
-        throw new Error('Failed to create team');
+        console.error('Error generating draft players:', error);
+        // Continue even if player generation fails
       }
+      
+      return {
+        team_id: team.id,
+        team_name: team.name,
+        game_id: game.id,
+        game_season: game.season,
+        game_match_day: game.match_day,
+        game_status: game.status,
+        game_stage: game.game_stage
+      };
     } catch (error) {
       console.error('GameService.createTeam error:', error);
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new Error('Failed to create team and game');
+      throw error;
     }
   }
 
   /**
-   * Cancel an active game for the authenticated user
-   * @param userId The authenticated user's ID
-   * @param token The JWT token of the authenticated user
+   * Cancel an active game
    * @param gameId The ID of the game to cancel
-   * @returns Success status and message
+   * @param token The JWT token of the authenticated user
+   * @returns The result of the operation
    */
-  async cancelGame(userId: string, token: string, gameId: string): Promise<CancelGameResponse> {
+  async cancelGame(gameId: string, token: string): Promise<CancelGameResponseModel> {
     try {
-      // First verify that the game exists and belongs to the user
-      const team = await gameRepository.getGameForUser(userId, gameId, token);
+      // Get the game
+      const game = await gameRepository.getGameById(gameId, token);
       
-      if (!team) {
-        throw new ApiError(404, 'Game not found or does not belong to you');
+      if (!game) {
+        throw new ApiError(404, 'Game not found');
       }
       
-      // Get the game data
-      const gameData = team.games;
-      const game: Game = Array.isArray(gameData) ? gameData[0] : gameData;
-      
-      // Check if the game is already completed
-      if (game.status === GAME_STATUS.COMPLETED) {
-        throw new ApiError(400, 'This game is already completed and cannot be cancelled');
-      }
-      
-      // Update the game status to completed (effectively cancelling it)
+      // Update game status to cancelled
       const success = await gameRepository.updateGameStatus(gameId, GAME_STATUS.COMPLETED);
       
       if (!success) {
-        throw new Error('Failed to cancel game');
+        throw new ApiError(500, 'Failed to cancel game');
       }
       
       return {
         success: true,
-        message: 'Game has been successfully cancelled'
+        message: 'Game cancelled successfully'
       };
     } catch (error) {
       console.error('GameService.cancelGame error:', error);
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new Error('Failed to cancel game');
+      throw error;
     }
   }
 
@@ -165,21 +146,21 @@ class GameService {
       }
       
       // Generate league components
-      const { opponentTeams, fixtures } = await this.generateLeagueComponents(
+      await this.generateLeagueComponents(
         gameId, 
         userTeam.id, 
         token
       );
+
+      const league = await leagueService.getLeague(gameId, token);
       
       // Update the game stage to regular season
       const updatedGame = await gameRepository.updateGameStage(gameId, GAME_STAGE.REGULAR_SEASON);
       
       return {
-        success: true,
-        message: 'Successfully started the main season',
         game: updatedGame,
-        fixtures,
-        opponent_teams: opponentTeams
+        fixtures: league.fixtures,
+        table: league.table
       };
     } catch (error) {
       if (error instanceof ApiError) {
@@ -221,8 +202,8 @@ class GameService {
     userTeamId: string, 
     token: string
   ): Promise<{ 
-    opponentTeams: any[], 
-    fixtures: any[] 
+    opponentTeams: OpponentTeam[], 
+    fixtures: Fixture[] 
   }> {
     // Get the current game (needed for season info)
     const currentGame = await gameRepository.getGameById(gameId, token);

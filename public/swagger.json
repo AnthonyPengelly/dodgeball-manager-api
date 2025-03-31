@@ -219,6 +219,268 @@
 				],
 				"type": "object",
 				"additionalProperties": false
+			},
+			"GameStatus": {
+				"type": "string",
+				"enum": [
+					"pending",
+					"in_progress",
+					"completed"
+				]
+			},
+			"GameStage": {
+				"type": "string",
+				"enum": [
+					"draft",
+					"pre_season",
+					"regular_season",
+					"post_season",
+					"off_season"
+				]
+			},
+			"CurrentGameResponseModel": {
+				"description": "Current game response model for tsoa documentation",
+				"properties": {
+					"game_id": {
+						"type": "string",
+						"description": "Game ID",
+						"example": "550e8400-e29b-41d4-a716-446655440000"
+					},
+					"game_season": {
+						"type": "number",
+						"format": "double",
+						"description": "Game season number",
+						"example": 1
+					},
+					"game_match_day": {
+						"type": "number",
+						"format": "double",
+						"description": "Game match day",
+						"example": 3
+					},
+					"game_status": {
+						"$ref": "#/components/schemas/GameStatus",
+						"description": "Game status",
+						"example": "in_progress"
+					},
+					"game_stage": {
+						"$ref": "#/components/schemas/GameStage",
+						"description": "Game stage",
+						"example": "regular_season"
+					},
+					"team_id": {
+						"type": "string",
+						"description": "Team ID",
+						"example": "550e8400-e29b-41d4-a716-446655440001"
+					},
+					"team_name": {
+						"type": "string",
+						"description": "Team name",
+						"example": "Dodgeball Dynamos"
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Current game retrieved successfully"
+					}
+				},
+				"required": [
+					"game_id",
+					"game_season",
+					"game_match_day",
+					"game_status",
+					"game_stage",
+					"team_id",
+					"team_name",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateTeamResponseModel": {
+				"description": "Create team response model",
+				"properties": {
+					"team_id": {
+						"type": "string",
+						"description": "Team ID",
+						"example": "550e8400-e29b-41d4-a716-446655440001"
+					},
+					"team_name": {
+						"type": "string",
+						"description": "Team name",
+						"example": "Dodgeball Dynamos"
+					},
+					"game_id": {
+						"type": "string",
+						"description": "Game ID",
+						"example": "550e8400-e29b-41d4-a716-446655440000"
+					},
+					"game_season": {
+						"type": "number",
+						"format": "double",
+						"description": "Game season",
+						"example": 1
+					},
+					"game_match_day": {
+						"type": "number",
+						"format": "double",
+						"description": "Game match day",
+						"example": 1
+					},
+					"game_status": {
+						"$ref": "#/components/schemas/GameStatus",
+						"description": "Game status",
+						"example": "in_progress"
+					},
+					"game_stage": {
+						"$ref": "#/components/schemas/GameStage",
+						"description": "Game stage",
+						"example": "draft"
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Team created successfully"
+					}
+				},
+				"required": [
+					"team_id",
+					"team_name",
+					"game_id",
+					"game_season",
+					"game_match_day",
+					"game_status",
+					"game_stage",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateTeamRequest": {
+				"description": "Create team request model",
+				"properties": {
+					"name": {
+						"type": "string",
+						"description": "Team name",
+						"example": "Dodgeball Dynamos"
+					}
+				},
+				"required": [
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CancelGameResponseModel": {
+				"description": "Cancel game response model",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Game cancelled successfully"
+					}
+				},
+				"required": [
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"StartMainSeasonResponseModel": {
+				"description": "Start main season response model",
+				"properties": {
+					"game": {
+						"properties": {
+							"game_stage": {
+								"$ref": "#/components/schemas/GameStage",
+								"description": "Game stage",
+								"example": "regular_season"
+							},
+							"status": {
+								"$ref": "#/components/schemas/GameStatus",
+								"description": "Game status",
+								"example": "in_progress"
+							},
+							"match_day": {
+								"type": "number",
+								"format": "double",
+								"description": "Game match day",
+								"example": 1
+							},
+							"season": {
+								"type": "number",
+								"format": "double",
+								"description": "Game season",
+								"example": 1
+							},
+							"id": {
+								"type": "string",
+								"description": "Game ID",
+								"example": "550e8400-e29b-41d4-a716-446655440000"
+							}
+						},
+						"required": [
+							"game_stage",
+							"status",
+							"match_day",
+							"season",
+							"id"
+						],
+						"type": "object",
+						"description": "Game data"
+					},
+					"fixtures": {
+						"items": {
+							"$ref": "#/components/schemas/FixtureModel"
+						},
+						"type": "array",
+						"description": "List of fixtures"
+					},
+					"table": {
+						"items": {
+							"$ref": "#/components/schemas/LeagueTableEntryModel"
+						},
+						"type": "array",
+						"description": "League table"
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Main season started successfully"
+					}
+				},
+				"required": [
+					"game",
+					"fixtures",
+					"table",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
 			}
 		},
 		"securitySchemes": {
@@ -275,6 +537,128 @@
 						}
 					}
 				]
+			}
+		},
+		"/games/current": {
+			"get": {
+				"operationId": "GetCurrentGame",
+				"responses": {
+					"200": {
+						"description": "Current game retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CurrentGameResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get the current game for the authenticated user",
+				"summary": "Get current game",
+				"tags": [
+					"Games"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/games/teams": {
+			"post": {
+				"operationId": "CreateTeam",
+				"responses": {
+					"201": {
+						"description": "Team created successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CreateTeamResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Create a new team and game for the authenticated user",
+				"summary": "Create new team and game",
+				"tags": [
+					"Games"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateTeamRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/games/cancel": {
+			"post": {
+				"operationId": "CancelGame",
+				"responses": {
+					"200": {
+						"description": "Game cancelled successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CancelGameResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Cancel an active game for the authenticated user",
+				"summary": "Cancel active game",
+				"tags": [
+					"Games"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/games/start-main-season": {
+			"post": {
+				"operationId": "StartMainSeason",
+				"responses": {
+					"200": {
+						"description": "Main season started successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StartMainSeasonResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Start the main season by transitioning from pre-season to regular season",
+				"summary": "Start main season",
+				"tags": [
+					"Games"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
 			}
 		}
 	},
