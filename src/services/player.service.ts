@@ -1,17 +1,10 @@
-import { supabaseAdmin, createClientFromToken } from '../utils/supabase';
+import { createClientFromToken } from '../utils/supabase';
 import { 
-  Player, PlayerStatus, GetDraftPlayersResponse, CompleteDraftRequest, 
-  CompleteDraftResponse, GetSquadResponse, TrainPlayerRequest, 
-  TrainPlayerResponse, PlayerStatName, ScoutPlayersRequest, 
-  ScoutPlayersResponse, PurchaseScoutedPlayerRequest, 
-  PurchaseScoutedPlayerResponse, ScoutedPlayer, GetScoutedPlayersResponse
+  Player
 } from '../types';
-import { PlayerGenerator } from '../utils/player-generator';
-import { DRAFT_CONSTANTS, GAME_STAGE, PLAYER_STATUS, TRAINING_CONSTANTS, PLAYER_STATS, SCOUTING_CONSTANTS } from '../utils/constants';
+import { PLAYER_STATUS } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
-import seasonService from './season.service';
-import { TierCalculator } from '../utils/tier-calculator';
-import { PlayerPriceCalculator } from '../utils/player-price-calculator';
+import { GetSquadResponse } from '../models/PlayerModels';
 
 class PlayerService {
   /**

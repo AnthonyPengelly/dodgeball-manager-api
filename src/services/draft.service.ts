@@ -1,7 +1,5 @@
-import { supabaseAdmin, createClientFromToken } from '../utils/supabase';
 import { 
-  Player, PlayerStatus, GetDraftPlayersResponse, CompleteDraftRequest, 
-  CompleteDraftResponse
+  Player, PlayerStatus
 } from '../types';
 import { PlayerGenerator } from '../utils/player-generator';
 import { DRAFT_CONSTANTS, GAME_STAGE, PLAYER_STATUS } from '../utils/constants';
@@ -9,6 +7,7 @@ import { ApiError } from '../middleware/error.middleware';
 import * as playerRepository from '../repositories/playerRepository';
 import * as teamRepository from '../repositories/teamRepository';
 import * as gameRepository from '../repositories/gameRepository';
+import { CompleteDraftRequestModel, CompleteDraftResponseModel } from '../models/PlayerModels';
 
 class DraftService {
   /**
@@ -55,7 +54,7 @@ class DraftService {
    * @param token JWT token of the authenticated user
    * @returns Response with draft players
    */
-  async getDraftPlayers(gameId: string, token: string): Promise<GetDraftPlayersResponse> {
+  async getDraftPlayers(gameId: string, token: string): Promise<{ players: Player[] }> {
     try {
       const players = await playerRepository.getDraftPlayersByGameId(gameId, token);
       return { players };
@@ -72,7 +71,7 @@ class DraftService {
    * @param token JWT token of the authenticated user
    * @returns Response with selected players
    */
-  async completeDraft(teamId: string, draftData: CompleteDraftRequest, token: string): Promise<CompleteDraftResponse> {
+  async completeDraft(teamId: string, draftData: CompleteDraftRequestModel, token: string): Promise<CompleteDraftResponseModel> {
     try {
       // Validate that the correct number of players are selected
       if (draftData.player_ids.length !== DRAFT_CONSTANTS.REQUIRED_PLAYERS) {

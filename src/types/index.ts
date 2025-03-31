@@ -33,16 +33,6 @@ export interface TeamWithGame {
   games: Game | Game[];
 }
 
-export interface CurrentGameResponse {
-  game_id: string;
-  game_season: number;
-  game_match_day: number;
-  game_status: string;
-  game_stage: GameStage;
-  team_id: string;
-  team_name: string;
-}
-
 // Matches the Supabase auth user type
 export interface User {
   id: string;
@@ -51,28 +41,6 @@ export interface User {
   role?: string;
   app_metadata?: Record<string, any>;
   user_metadata?: Record<string, any>;
-}
-
-// Request to create a new team and game
-export interface CreateTeamRequest {
-  name: string;
-}
-
-// Response for team creation
-export interface CreateTeamResponse {
-  team_id: string;
-  team_name: string;
-  game_id: string;
-  game_season: number;
-  game_match_day: number;
-  game_status: GameStatus;
-  game_stage: GameStage;
-}
-
-// Response for game cancellation
-export interface CancelGameResponse {
-  success: boolean;
-  message: string;
 }
 
 // Player types
@@ -132,29 +100,6 @@ export interface PlayerPotentialStats {
   positional_sense_potential: number;
   teamwork_potential: number;
   clutch_factor_potential: number;
-}
-
-export interface GetDraftPlayersResponse {
-  players: Player[];
-}
-
-// Request for completing the draft
-export interface CompleteDraftRequest {
-  game_id: string;
-  player_ids: string[];
-}
-
-// Response for completing the draft
-export interface CompleteDraftResponse {
-  success: boolean;
-  message: string;
-  team_id: string;
-  selected_players: Player[];
-}
-
-// Response for getting the team squad
-export interface GetSquadResponse {
-  players: Player[];
 }
 
 export interface Season {

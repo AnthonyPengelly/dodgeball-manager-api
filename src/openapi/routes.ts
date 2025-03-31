@@ -4,6 +4,8 @@
 import type { TsoaRoute } from '@tsoa/runtime';
 import {  fetchMiddlewares, ExpressTemplateService } from '@tsoa/runtime';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { PlayerController } from './../controllers/player.controller';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { LeagueController } from './../controllers/league.controller';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { GameController } from './../controllers/game.controller';
@@ -17,6 +19,81 @@ const expressAuthenticationRecasted = expressAuthentication as (req: ExRequest, 
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
 const models: TsoaRoute.Models = {
+    "PlayerStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["draft"]},{"dataType":"enum","enums":["team"]},{"dataType":"enum","enums":["opponent"]},{"dataType":"enum","enums":["scout"]},{"dataType":"enum","enums":["transfer"]},{"dataType":"enum","enums":["sold"]},{"dataType":"enum","enums":["rejected"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Player": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "game_id": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+            "status": {"ref":"PlayerStatus","required":true},
+            "throwing": {"dataType":"double","required":true},
+            "catching": {"dataType":"double","required":true},
+            "dodging": {"dataType":"double","required":true},
+            "blocking": {"dataType":"double","required":true},
+            "speed": {"dataType":"double","required":true},
+            "positional_sense": {"dataType":"double","required":true},
+            "teamwork": {"dataType":"double","required":true},
+            "clutch_factor": {"dataType":"double","required":true},
+            "throwing_potential": {"dataType":"double","required":true},
+            "catching_potential": {"dataType":"double","required":true},
+            "dodging_potential": {"dataType":"double","required":true},
+            "blocking_potential": {"dataType":"double","required":true},
+            "speed_potential": {"dataType":"double","required":true},
+            "positional_sense_potential": {"dataType":"double","required":true},
+            "teamwork_potential": {"dataType":"double","required":true},
+            "clutch_factor_potential": {"dataType":"double","required":true},
+            "tier": {"dataType":"double","required":true},
+            "potential_tier": {"dataType":"double","required":true},
+            "created_at": {"dataType":"string","required":true},
+            "updated_at": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "GetDraftPlayersResponseModel": {
+        "dataType": "refObject",
+        "properties": {
+            "success": {"dataType":"boolean","required":true},
+            "message": {"dataType":"string","required":true},
+            "players": {"dataType":"array","array":{"dataType":"refObject","ref":"Player"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CompleteDraftResponseModel": {
+        "dataType": "refObject",
+        "properties": {
+            "success": {"dataType":"boolean","required":true},
+            "message": {"dataType":"string","required":true},
+            "team_id": {"dataType":"string","required":true},
+            "selected_players": {"dataType":"array","array":{"dataType":"refObject","ref":"Player"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CompleteDraftRequestModel": {
+        "dataType": "refObject",
+        "properties": {
+            "player_ids": {"dataType":"array","array":{"dataType":"string"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "GetSquadResponseModel": {
+        "dataType": "refObject",
+        "properties": {
+            "players": {"dataType":"array","array":{"dataType":"refObject","ref":"Player"},"required":true},
+            "success": {"dataType":"boolean","required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "FixtureModel": {
         "dataType": "refObject",
         "properties": {
@@ -153,6 +230,100 @@ export function RegisterRoutes(app: Router) {
 
 
     
+        const argsPlayerController_getDraftPlayers: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/players/draft',
+            authenticateMiddleware([{"bearerAuth":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PlayerController)),
+            ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.getDraftPlayers)),
+
+            async function PlayerController_getDraftPlayers(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_getDraftPlayers, request, response });
+
+                const controller = new PlayerController();
+
+              await templateService.apiHandler({
+                methodName: 'getDraftPlayers',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPlayerController_completeDraft: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                draftData: {"in":"body","name":"draftData","required":true,"ref":"CompleteDraftRequestModel"},
+        };
+        app.post('/api/players/draft/complete',
+            authenticateMiddleware([{"bearerAuth":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PlayerController)),
+            ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.completeDraft)),
+
+            async function PlayerController_completeDraft(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_completeDraft, request, response });
+
+                const controller = new PlayerController();
+
+              await templateService.apiHandler({
+                methodName: 'completeDraft',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPlayerController_getSquad: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/players/squad',
+            authenticateMiddleware([{"bearerAuth":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PlayerController)),
+            ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.getSquad)),
+
+            async function PlayerController_getSquad(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_getSquad, request, response });
+
+                const controller = new PlayerController();
+
+              await templateService.apiHandler({
+                methodName: 'getSquad',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsLeagueController_getLeague: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 season: {"in":"query","name":"season","dataType":"double"},

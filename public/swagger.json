@@ -7,6 +7,254 @@
 		"requestBodies": {},
 		"responses": {},
 		"schemas": {
+			"PlayerStatus": {
+				"type": "string",
+				"enum": [
+					"draft",
+					"team",
+					"opponent",
+					"scout",
+					"transfer",
+					"sold",
+					"rejected"
+				]
+			},
+			"Player": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"game_id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"status": {
+						"$ref": "#/components/schemas/PlayerStatus"
+					},
+					"throwing": {
+						"type": "number",
+						"format": "double"
+					},
+					"catching": {
+						"type": "number",
+						"format": "double"
+					},
+					"dodging": {
+						"type": "number",
+						"format": "double"
+					},
+					"blocking": {
+						"type": "number",
+						"format": "double"
+					},
+					"speed": {
+						"type": "number",
+						"format": "double"
+					},
+					"positional_sense": {
+						"type": "number",
+						"format": "double"
+					},
+					"teamwork": {
+						"type": "number",
+						"format": "double"
+					},
+					"clutch_factor": {
+						"type": "number",
+						"format": "double"
+					},
+					"throwing_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"catching_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"dodging_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"blocking_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"speed_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"positional_sense_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"teamwork_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"clutch_factor_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"tier": {
+						"type": "number",
+						"format": "double"
+					},
+					"potential_tier": {
+						"type": "number",
+						"format": "double"
+					},
+					"created_at": {
+						"type": "string"
+					},
+					"updated_at": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"game_id",
+					"name",
+					"status",
+					"throwing",
+					"catching",
+					"dodging",
+					"blocking",
+					"speed",
+					"positional_sense",
+					"teamwork",
+					"clutch_factor",
+					"throwing_potential",
+					"catching_potential",
+					"dodging_potential",
+					"blocking_potential",
+					"speed_potential",
+					"positional_sense_potential",
+					"teamwork_potential",
+					"clutch_factor_potential",
+					"tier",
+					"potential_tier",
+					"created_at",
+					"updated_at"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GetDraftPlayersResponseModel": {
+				"description": "Get draft players response model for tsoa documentation",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Draft players retrieved successfully"
+					},
+					"players": {
+						"items": {
+							"$ref": "#/components/schemas/Player"
+						},
+						"type": "array",
+						"description": "List of draft players"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"players"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CompleteDraftResponseModel": {
+				"description": "Complete draft response model for tsoa documentation",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Draft completed successfully"
+					},
+					"team_id": {
+						"type": "string",
+						"description": "Team ID",
+						"example": "550e8400-e29b-41d4-a716-446655440000"
+					},
+					"selected_players": {
+						"items": {
+							"$ref": "#/components/schemas/Player"
+						},
+						"type": "array",
+						"description": "Selected players"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"team_id",
+					"selected_players"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CompleteDraftRequestModel": {
+				"description": "Complete draft request model",
+				"properties": {
+					"player_ids": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Array of player IDs to select for the team",
+						"example": [
+							"550e8400-e29b-41d4-a716-446655440000",
+							"550e8400-e29b-41d4-a716-446655440001"
+						]
+					}
+				},
+				"required": [
+					"player_ids"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GetSquadResponseModel": {
+				"description": "Get squad response model for tsoa documentation",
+				"properties": {
+					"players": {
+						"items": {
+							"$ref": "#/components/schemas/Player"
+						},
+						"type": "array",
+						"description": "List of players in the squad"
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Squad retrieved successfully"
+					}
+				},
+				"required": [
+					"players",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"FixtureModel": {
 				"description": "Fixture with team names",
 				"properties": {
@@ -501,6 +749,99 @@
 		"contact": {}
 	},
 	"paths": {
+		"/players/draft": {
+			"get": {
+				"operationId": "GetDraftPlayers",
+				"responses": {
+					"200": {
+						"description": "Draft players retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GetDraftPlayersResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get draft players for the current game",
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/players/draft/complete": {
+			"post": {
+				"operationId": "CompleteDraft",
+				"responses": {
+					"200": {
+						"description": "Draft completed successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CompleteDraftResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Complete the draft by selecting players for the team",
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"description": "The draft data with selected player IDs",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CompleteDraftRequestModel",
+								"description": "The draft data with selected player IDs"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/players/squad": {
+			"get": {
+				"operationId": "GetSquad",
+				"responses": {
+					"200": {
+						"description": "Squad retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GetSquadResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get the squad (team players) for the current team",
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			}
+		},
 		"/leagues": {
 			"get": {
 				"operationId": "GetLeague",

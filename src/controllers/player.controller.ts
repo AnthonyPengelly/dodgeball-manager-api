@@ -1,25 +1,35 @@
-import { Request, Response } from 'express';
+import { Controller, Route, Tags, Get, Post, Body, Request, Security, SuccessResponse } from 'tsoa';
 import playerService from '../services/player.service';
 import gameService from '../services/game.service';
-import { ApiError } from '../middleware/error.middleware';
-import { CompleteDraftRequest } from '../types';
-import { DRAFT_CONSTANTS } from '../utils/constants';
 import draftService from '../services/draft.service';
+import { ApiError } from '../middleware/error.middleware';
+import { DRAFT_CONSTANTS } from '../utils/constants';
+import {
+  GetDraftPlayersResponseModel,
+  CompleteDraftRequestModel,
+  CompleteDraftResponseModel,
+  GetSquadResponseModel,
+} from '../models/PlayerModels';
 
-/**
- * Get draft players for the current game
- * @param req Express request
- * @param res Express response
- */
-export const getDraftPlayers = async (req: Request, res: Response) => {
-  try {
-    // Get user ID from the request (set by the auth middleware)
-    const userId = req.user?.id;
-    const token = req.headers.authorization?.split(' ')[1] || '';
-    
-    if (!userId) {
+@Route('players')
+@Tags('Players')
+export class PlayerController extends Controller {
+  /**
+   * Get draft players for the current game
+   * @param request Express request with authenticated user
+   */
+  @Get('draft')
+  @Security('bearerAuth')
+  @SuccessResponse('200', 'Draft players retrieved successfully')
+  public async getDraftPlayers(
+    @Request() request: any
+  ): Promise<GetDraftPlayersResponseModel> {
+    if (!request || !request.user || !request.user.id) {
       throw new ApiError(401, 'Unauthorized');
     }
+    
+    const userId = request.user.id;
+    const token = request.headers.authorization?.split(' ')[1] || '';
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
@@ -29,33 +39,33 @@ export const getDraftPlayers = async (req: Request, res: Response) => {
     }
     
     // Get draft players for the current game
-    const draftPlayers = await draftService.getDraftPlayers(currentGame.game_id, token);
+    const draftPlayersResponse = await draftService.getDraftPlayers(currentGame.game_id, token);
     
-    res.status(200).json(draftPlayers);
-  } catch (error) {
-    console.error('Error in getDraftPlayers controller:', error);
-    if (error instanceof ApiError) {
-      res.status(error.statusCode).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: 'Failed to get draft players' });
-    }
+    return {
+      success: true,
+      message: 'Draft players retrieved successfully',
+      players: draftPlayersResponse.players
+    };
   }
-};
-
-/**
- * Complete the draft by selecting players for the team
- * @param req Express request
- * @param res Express response
- */
-export const completeDraft = async (req: Request, res: Response) => {
-  try {
-    // Get user ID from the request (set by the auth middleware)
-    const userId = req.user?.id;
-    const token = req.headers.authorization?.split(' ')[1] || '';
-    
-    if (!userId) {
+  
+  /**
+   * Complete the draft by selecting players for the team
+   * @param request Express request with authenticated user
+   * @param draftData The draft data with selected player IDs
+   */
+  @Post('draft/complete')
+  @Security('bearerAuth')
+  @SuccessResponse('200', 'Draft completed successfully')
+  public async completeDraft(
+    @Request() request: any,
+    @Body() draftData: CompleteDraftRequestModel
+  ): Promise<CompleteDraftResponseModel> {
+    if (!request || !request.user || !request.user.id) {
       throw new ApiError(401, 'Unauthorized');
     }
+    
+    const userId = request.user.id;
+    const token = request.headers.authorization?.split(' ')[1] || '';
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
@@ -65,8 +75,6 @@ export const completeDraft = async (req: Request, res: Response) => {
     }
     
     // Validate request body
-    const draftData = req.body as CompleteDraftRequest;
-    
     if (!draftData.player_ids || !Array.isArray(draftData.player_ids)) {
       throw new ApiError(400, 'Invalid request: player_ids must be an array');
     }
@@ -75,37 +83,35 @@ export const completeDraft = async (req: Request, res: Response) => {
       throw new ApiError(400, `You must select exactly ${DRAFT_CONSTANTS.REQUIRED_PLAYERS} players to complete the draft`);
     }
     
-    // Set the game_id from the current game
-    draftData.game_id = currentGame.game_id;
-    
     // Complete the draft
-    const result = await draftService.completeDraft(currentGame.team_id, draftData, token);
+    const result = await draftService.completeDraft(currentGame.team_id, {
+      player_ids: draftData.player_ids
+    }, token);
     
-    res.status(200).json(result);
-  } catch (error) {
-    console.error('Error in completeDraft controller:', error);
-    if (error instanceof ApiError) {
-      res.status(error.statusCode).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: 'Failed to complete draft' });
-    }
+    return {
+      success: true,
+      message: 'Draft completed successfully',
+      team_id: result.team_id,
+      selected_players: result.selected_players
+    };
   }
-};
-
-/**
- * Get the squad (team players) for the current team
- * @param req Express request
- * @param res Express response
- */
-export const getSquad = async (req: Request, res: Response) => {
-  try {
-    // Get user ID from the request (set by the auth middleware)
-    const userId = req.user?.id;
-    const token = req.headers.authorization?.split(' ')[1] || '';
-    
-    if (!userId) {
+  
+  /**
+   * Get the squad (team players) for the current team
+   * @param request Express request with authenticated user
+   */
+  @Get('squad')
+  @Security('bearerAuth')
+  @SuccessResponse('200', 'Squad retrieved successfully')
+  public async getSquad(
+    @Request() request: any
+  ): Promise<GetSquadResponseModel> {
+    if (!request || !request.user || !request.user.id) {
       throw new ApiError(401, 'Unauthorized');
     }
+    
+    const userId = request.user.id;
+    const token = request.headers.authorization?.split(' ')[1] || '';
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
@@ -115,15 +121,12 @@ export const getSquad = async (req: Request, res: Response) => {
     }
     
     // Get the squad for the current team
-    const squad = await playerService.getSquad(currentGame.team_id, token);
+    const squadResponse = await playerService.getSquad(currentGame.team_id, token);
     
-    res.status(200).json(squad);
-  } catch (error) {
-    console.error('Error in getSquad controller:', error);
-    if (error instanceof ApiError) {
-      res.status(error.statusCode).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: 'Failed to get squad' });
-    }
+    return {
+      success: true,
+      message: 'Squad retrieved successfully',
+      players: squadResponse.players
+    };
   }
-};
+}
