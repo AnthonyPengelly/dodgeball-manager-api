@@ -118,44 +118,4 @@ export class GameController extends Controller {
       message: 'Game cancelled successfully'
     };
   }
-
-  /**
-   * Start the main season by transitioning from pre-season to regular season
-   * 
-   * @summary Start main season
-   */
-  @Post('start-main-season')
-  @Security('bearerAuth')
-  @SuccessResponse('200', 'Main season started successfully')
-  public async startMainSeason(
-    @Request() request: any
-  ): Promise<StartMainSeasonResponseModel> {
-    if (!request || !request.user || !request.user.id) {
-      throw new ApiError(401, 'Unauthorized');
-    }
-    
-    const userId = request.user.id;
-    const token = request.headers.authorization?.split(' ')[1] || '';
-    
-    // Get the current game
-    const currentGame = await gameService.getCurrentGame(userId, token);
-    
-    if (!currentGame) {
-      throw new ApiError(404, 'No active game found');
-    }
-    
-    // Check if the game is in the pre-season stage
-    if (currentGame.game_stage !== 'pre_season') {
-      throw new ApiError(400, 'Game must be in pre-season stage to start the main season');
-    }
-    
-    // Start the main season
-    const result = await gameService.startMainSeason(currentGame.game_id, token);
-    
-    return {
-      success: true,
-      message: 'Main season started successfully',
-      ...result,
-    };
-  }
 }

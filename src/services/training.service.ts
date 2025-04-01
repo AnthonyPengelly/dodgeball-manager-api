@@ -1,6 +1,8 @@
 import { 
   Player,
-  PlayerStatName
+  PlayerStatName,
+  Season,
+  SeasonTrainingInfo
 } from '../types';
 import { TrainPlayerRequestModel } from '../models/PlayerModels';
 import { GAME_STAGE, PLAYER_STATUS, TRAINING_CONSTANTS, PLAYER_STATS } from '../utils/constants';
@@ -10,7 +12,8 @@ import seasonService from './season.service';
 import * as teamRepository from '../repositories/teamRepository';
 import * as gameRepository from '../repositories/gameRepository';
 import * as playerRepository from '../repositories/playerRepository';
-import { TrainPlayerResponseModel } from '../models/SeasonModels';
+import * as seasonRepository from '../repositories/seasonRepository';
+import { TrainPlayerResponseModel } from '../models/TrainingModels';
 
 class TrainingService {
   /**
@@ -46,7 +49,7 @@ class TrainingService {
       
       // Get the current season and calculate training credits
       const currentSeason = await seasonService.getCurrentSeason(teamId, token);
-      const trainingInfo = seasonService.calculateTrainingCredits(currentSeason, team.training_facility_level);
+      const trainingInfo = this.calculateTrainingCredits(currentSeason, team.training_facility_level);
       
       if (trainingInfo.training_credits_remaining <= 0) {
         throw new ApiError(400, 'No training credits remaining for this season');
@@ -59,10 +62,10 @@ class TrainingService {
       const { statName, oldValue, newValue } = await this.improvePlayerStat(player, trainingData.stat_name);
       
       // Update the season's training credits used
-      const updatedSeason = await seasonService.updateTrainingCreditsUsed(currentSeason.id, 1);
+      const updatedSeason = await this.updateTrainingCreditsUsed(currentSeason.id, 1);
       
       // Calculate updated training info
-      const updatedTrainingInfo = seasonService.calculateTrainingCredits(updatedSeason, team.training_facility_level);
+      const updatedTrainingInfo = this.calculateTrainingCredits(updatedSeason, team.training_facility_level);
       
       return {
         success: true,
@@ -77,6 +80,79 @@ class TrainingService {
       }
       throw new ApiError(500, 'Failed to train player');
     }
+  }
+
+  /**
+   * Get training information for the current season
+   * @param teamId The team ID
+   * @param token The JWT token of the authenticated user
+   * @returns The season's training information
+   */
+  async getSeasonTrainingInfo(teamId: string, token: string): Promise<SeasonTrainingInfo> {
+    try {
+      // Get the current season
+      const currentSeason = await seasonService.getCurrentSeason(teamId, token);
+      
+      // Get the team's training facility level
+      const team = await teamRepository.getTeamById(teamId, token);
+      if (!team) {
+        throw new ApiError(404, 'Team not found');
+      }
+      
+      // Calculate and return training credits info
+      const trainingInfo = this.calculateTrainingCredits(currentSeason, team.training_facility_level);
+      return trainingInfo;
+    } catch (error) {
+      console.error('SeasonService.getSeasonTrainingInfo error:', error);
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(500, 'Failed to get season training info');
+    }
+  }
+
+  /**
+   * Update the training credits used for a season
+   * @param seasonId The season ID
+   * @param creditsUsed The number of credits to add to the used count
+   * @returns The updated season data
+   */
+  async updateTrainingCreditsUsed(seasonId: string, creditsUsed: number = 1): Promise<Season> {
+    try {
+      return await seasonRepository.updateTrainingCreditsUsed(seasonId, creditsUsed);
+    } catch (error) {
+      console.error('SeasonService.updateTrainingCreditsUsed error:', error);
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(500, 'Failed to update training credits');
+    }
+  }
+
+  /**
+   * Calculate training credits for a season
+   * @param season The season to calculate credits for
+   * @param trainingFacilityLevel The team's training facility level
+   * @returns The season's training information
+   */
+  calculateTrainingCredits(season: Season, trainingFacilityLevel: number): SeasonTrainingInfo {
+    // Get the total credits available based on training facility level
+    const level = Math.min(Math.max(trainingFacilityLevel, 1), 5);
+    const creditsAvailable = TRAINING_CONSTANTS.CREDITS_BY_LEVEL[level as 1 | 2 | 3 | 4 | 5];
+    
+    // Calculate remaining credits
+    const creditsUsed = season.training_credits_used || 0;
+    const creditsRemaining = Math.max(0, creditsAvailable - creditsUsed);
+    
+    return {
+      id: season.id,
+      season_number: season.season_number,
+      team_id: season.team_id,
+      training_facility_level: trainingFacilityLevel,
+      training_credits_used: creditsUsed,
+      training_credits_available: creditsAvailable,
+      training_credits_remaining: creditsRemaining
+    };
   }
   
   /**

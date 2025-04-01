@@ -7,60 +7,6 @@
 		"requestBodies": {},
 		"responses": {},
 		"schemas": {
-			"GetSeasonTrainingInfoResponseModel": {
-				"description": "Get season training info response model for tsoa documentation",
-				"properties": {
-					"id": {
-						"type": "string"
-					},
-					"season_number": {
-						"type": "number",
-						"format": "double"
-					},
-					"team_id": {
-						"type": "string"
-					},
-					"training_facility_level": {
-						"type": "number",
-						"format": "double"
-					},
-					"training_credits_used": {
-						"type": "number",
-						"format": "double"
-					},
-					"training_credits_available": {
-						"type": "number",
-						"format": "double"
-					},
-					"training_credits_remaining": {
-						"type": "number",
-						"format": "double"
-					},
-					"success": {
-						"type": "boolean",
-						"description": "Success status",
-						"example": true
-					},
-					"message": {
-						"type": "string",
-						"description": "Response message",
-						"example": "Season training info retrieved successfully"
-					}
-				},
-				"required": [
-					"id",
-					"season_number",
-					"team_id",
-					"training_facility_level",
-					"training_credits_used",
-					"training_credits_available",
-					"training_credits_remaining",
-					"success",
-					"message"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"PlayerStatus": {
 				"type": "string",
 				"enum": [
@@ -72,6 +18,171 @@
 					"sold",
 					"rejected"
 				]
+			},
+			"TransferListedPlayer": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"game_id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"status": {
+						"$ref": "#/components/schemas/PlayerStatus"
+					},
+					"throwing": {
+						"type": "number",
+						"format": "double"
+					},
+					"catching": {
+						"type": "number",
+						"format": "double"
+					},
+					"dodging": {
+						"type": "number",
+						"format": "double"
+					},
+					"blocking": {
+						"type": "number",
+						"format": "double"
+					},
+					"speed": {
+						"type": "number",
+						"format": "double"
+					},
+					"positional_sense": {
+						"type": "number",
+						"format": "double"
+					},
+					"teamwork": {
+						"type": "number",
+						"format": "double"
+					},
+					"clutch_factor": {
+						"type": "number",
+						"format": "double"
+					},
+					"throwing_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"catching_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"dodging_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"blocking_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"speed_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"positional_sense_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"teamwork_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"clutch_factor_potential": {
+						"type": "number",
+						"format": "double"
+					},
+					"tier": {
+						"type": "number",
+						"format": "double"
+					},
+					"potential_tier": {
+						"type": "number",
+						"format": "double"
+					},
+					"created_at": {
+						"type": "string"
+					},
+					"updated_at": {
+						"type": "string"
+					},
+					"buy_price": {
+						"type": "number",
+						"format": "double"
+					},
+					"sell_price": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"game_id",
+					"name",
+					"status",
+					"throwing",
+					"catching",
+					"dodging",
+					"blocking",
+					"speed",
+					"positional_sense",
+					"teamwork",
+					"clutch_factor",
+					"throwing_potential",
+					"catching_potential",
+					"dodging_potential",
+					"blocking_potential",
+					"speed_potential",
+					"positional_sense_potential",
+					"teamwork_potential",
+					"clutch_factor_potential",
+					"tier",
+					"potential_tier",
+					"created_at",
+					"updated_at",
+					"buy_price",
+					"sell_price"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GetTransferListResponse": {
+				"description": "Response model for retrieving transfer list",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Indicates if the operation was successful"
+					},
+					"message": {
+						"type": "string",
+						"description": "Descriptive message about the operation result"
+					},
+					"transfer_list": {
+						"items": {
+							"$ref": "#/components/schemas/TransferListedPlayer"
+						},
+						"type": "array",
+						"description": "List of players available for transfer"
+					},
+					"season": {
+						"type": "number",
+						"format": "double",
+						"description": "Current season number"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"transfer_list",
+					"season"
+				],
+				"type": "object",
+				"additionalProperties": false
 			},
 			"Player": {
 				"properties": {
@@ -195,6 +306,148 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"BuyTransferListedPlayerResponse": {
+				"description": "Response model for buying a transfer-listed player",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Indicates if the operation was successful"
+					},
+					"message": {
+						"type": "string",
+						"description": "Descriptive message about the operation result"
+					},
+					"player": {
+						"$ref": "#/components/schemas/Player",
+						"description": "Details of the purchased player"
+					},
+					"budget_remaining": {
+						"type": "number",
+						"format": "double",
+						"description": "Remaining budget after the purchase"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"player",
+					"budget_remaining"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BuyTransferListedPlayerRequest": {
+				"description": "Request model for buying a transfer-listed player",
+				"properties": {
+					"player_id": {
+						"type": "string",
+						"description": "ID of the player to buy"
+					}
+				},
+				"required": [
+					"player_id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SellPlayerResponse": {
+				"description": "Response model for selling a player",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Indicates if the operation was successful"
+					},
+					"message": {
+						"type": "string",
+						"description": "Descriptive message about the operation result"
+					},
+					"sold_player": {
+						"$ref": "#/components/schemas/Player",
+						"description": "Details of the sold player"
+					},
+					"budget": {
+						"type": "number",
+						"format": "double",
+						"description": "Updated team budget after selling the player"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"sold_player",
+					"budget"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SellPlayerRequest": {
+				"description": "Request model for selling a player",
+				"properties": {
+					"player_id": {
+						"type": "string",
+						"description": "ID of the player to sell"
+					}
+				},
+				"required": [
+					"player_id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GetSeasonTrainingInfoResponseModel": {
+				"description": "Get season training info response model for tsoa documentation",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"season_number": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_id": {
+						"type": "string"
+					},
+					"training_facility_level": {
+						"type": "number",
+						"format": "double"
+					},
+					"training_credits_used": {
+						"type": "number",
+						"format": "double"
+					},
+					"training_credits_available": {
+						"type": "number",
+						"format": "double"
+					},
+					"training_credits_remaining": {
+						"type": "number",
+						"format": "double"
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Season training info retrieved successfully"
+					}
+				},
+				"required": [
+					"id",
+					"season_number",
+					"team_id",
+					"training_facility_level",
+					"training_credits_used",
+					"training_credits_available",
+					"training_credits_remaining",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"SeasonTrainingInfo": {
 				"properties": {
 					"id": {
@@ -297,6 +550,364 @@
 				"required": [
 					"player_id",
 					"stat_name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GameStatus": {
+				"type": "string",
+				"enum": [
+					"pending",
+					"in_progress",
+					"completed"
+				]
+			},
+			"GameStage": {
+				"type": "string",
+				"enum": [
+					"draft",
+					"pre_season",
+					"regular_season",
+					"post_season",
+					"off_season"
+				]
+			},
+			"FixtureModel": {
+				"description": "Fixture with team names",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "Fixture ID",
+						"example": "550e8400-e29b-41d4-a716-446655440000"
+					},
+					"game_id": {
+						"type": "string",
+						"description": "Game ID",
+						"example": "550e8400-e29b-41d4-a716-446655440001"
+					},
+					"season": {
+						"type": "number",
+						"format": "double",
+						"description": "Season number",
+						"example": 1
+					},
+					"match_day": {
+						"type": "number",
+						"format": "double",
+						"description": "Match day number",
+						"example": 3
+					},
+					"home_team_id": {
+						"type": "string",
+						"description": "Home team ID",
+						"example": "550e8400-e29b-41d4-a716-446655440002"
+					},
+					"away_team_id": {
+						"type": "string",
+						"description": "Away team ID",
+						"example": "550e8400-e29b-41d4-a716-446655440003"
+					},
+					"home_team_type": {
+						"type": "string",
+						"enum": [
+							"user",
+							"opponent"
+						],
+						"description": "Home team type",
+						"example": "user"
+					},
+					"away_team_type": {
+						"type": "string",
+						"enum": [
+							"user",
+							"opponent"
+						],
+						"description": "Away team type",
+						"example": "opponent"
+					},
+					"home_score": {
+						"type": "number",
+						"format": "double",
+						"description": "Home team score",
+						"example": 5
+					},
+					"away_score": {
+						"type": "number",
+						"format": "double",
+						"description": "Away team score",
+						"example": 3
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"scheduled",
+							"completed"
+						],
+						"description": "Match status",
+						"example": "completed"
+					},
+					"played_at": {
+						"type": "string",
+						"description": "When the match was played",
+						"example": "2025-03-31T14:30:00Z"
+					},
+					"created_at": {
+						"type": "string",
+						"description": "When the fixture was created",
+						"example": "2025-03-30T10:00:00Z"
+					},
+					"home_team_name": {
+						"type": "string",
+						"description": "Home team name",
+						"example": "Dodgeball Dynamos"
+					},
+					"away_team_name": {
+						"type": "string",
+						"description": "Away team name",
+						"example": "Throwback Titans"
+					}
+				},
+				"required": [
+					"id",
+					"game_id",
+					"season",
+					"match_day",
+					"home_team_id",
+					"away_team_id",
+					"home_team_type",
+					"away_team_type",
+					"status",
+					"created_at"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LeagueTableEntryModel": {
+				"description": "League table entry for tsoa documentation",
+				"properties": {
+					"team_id": {
+						"type": "string",
+						"description": "Team ID",
+						"example": "550e8400-e29b-41d4-a716-446655440000"
+					},
+					"team_name": {
+						"type": "string",
+						"description": "Team name",
+						"example": "Dodgeball Dynamos"
+					},
+					"team_type": {
+						"type": "string",
+						"enum": [
+							"user",
+							"opponent"
+						],
+						"description": "Type of team",
+						"example": "user"
+					},
+					"played": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of matches played",
+						"example": 5
+					},
+					"won": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of matches won",
+						"example": 3
+					},
+					"lost": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of matches lost",
+						"example": 2
+					},
+					"points": {
+						"type": "number",
+						"format": "double",
+						"description": "Total points",
+						"example": 9
+					}
+				},
+				"required": [
+					"team_id",
+					"team_name",
+					"team_type",
+					"played",
+					"won",
+					"lost",
+					"points"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"StartMainSeasonResponseModel": {
+				"description": "Start main season response model",
+				"properties": {
+					"game": {
+						"properties": {
+							"game_stage": {
+								"$ref": "#/components/schemas/GameStage",
+								"description": "Game stage",
+								"example": "regular_season"
+							},
+							"status": {
+								"$ref": "#/components/schemas/GameStatus",
+								"description": "Game status",
+								"example": "in_progress"
+							},
+							"match_day": {
+								"type": "number",
+								"format": "double",
+								"description": "Game match day",
+								"example": 1
+							},
+							"season": {
+								"type": "number",
+								"format": "double",
+								"description": "Game season",
+								"example": 1
+							},
+							"id": {
+								"type": "string",
+								"description": "Game ID",
+								"example": "550e8400-e29b-41d4-a716-446655440000"
+							}
+						},
+						"required": [
+							"game_stage",
+							"status",
+							"match_day",
+							"season",
+							"id"
+						],
+						"type": "object",
+						"description": "Game data"
+					},
+					"fixtures": {
+						"items": {
+							"$ref": "#/components/schemas/FixtureModel"
+						},
+						"type": "array",
+						"description": "List of fixtures"
+					},
+					"table": {
+						"items": {
+							"$ref": "#/components/schemas/LeagueTableEntryModel"
+						},
+						"type": "array",
+						"description": "League table"
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Main season started successfully"
+					}
+				},
+				"required": [
+					"game",
+					"fixtures",
+					"table",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"EndSeasonResponse": {
+				"description": "End season response model",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Indicates if the operation was successful"
+					},
+					"message": {
+						"type": "string",
+						"description": "Descriptive message about the season ending result"
+					},
+					"game_ended": {
+						"type": "boolean",
+						"description": "Indicates if the entire game has ended"
+					},
+					"season_completed": {
+						"type": "number",
+						"format": "double",
+						"description": "The season number that was just completed"
+					},
+					"next_season": {
+						"type": "number",
+						"format": "double",
+						"description": "The upcoming season number, if applicable"
+					},
+					"promoted": {
+						"type": "boolean",
+						"description": "Indicates if the team was promoted to a higher league"
+					},
+					"champion": {
+						"type": "boolean",
+						"description": "Indicates if the team won the championship"
+					},
+					"budget_update": {
+						"properties": {
+							"new_budget": {
+								"type": "number",
+								"format": "double",
+								"description": "Updated budget after all financial transactions"
+							},
+							"wages_paid": {
+								"type": "number",
+								"format": "double",
+								"description": "Total wages paid to players"
+							},
+							"stadium_income": {
+								"type": "number",
+								"format": "double",
+								"description": "Income generated from stadium during the season"
+							},
+							"previous": {
+								"type": "number",
+								"format": "double",
+								"description": "Previous budget amount"
+							}
+						},
+						"required": [
+							"new_budget",
+							"wages_paid",
+							"stadium_income",
+							"previous"
+						],
+						"type": "object",
+						"description": "Details of budget changes at the end of the season"
+					},
+					"promoted_team": {
+						"properties": {
+							"name": {
+								"type": "string",
+								"description": "Name of the promoted team"
+							},
+							"id": {
+								"type": "string",
+								"description": "Unique identifier of the promoted team"
+							}
+						},
+						"required": [
+							"name",
+							"id"
+						],
+						"type": "object",
+						"description": "Details of the team promoted to a higher league"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"game_ended",
+					"season_completed"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -531,162 +1142,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"GetFacilityInfoResponseModel": {
-				"description": "Get facility info response model for tsoa documentation",
-				"properties": {
-					"training_facility_level": {
-						"type": "number",
-						"format": "double"
-					},
-					"scout_level": {
-						"type": "number",
-						"format": "double"
-					},
-					"stadium_size": {
-						"type": "number",
-						"format": "double"
-					},
-					"training_facility_upgrade_cost": {
-						"type": "number",
-						"format": "double"
-					},
-					"scout_upgrade_cost": {
-						"type": "number",
-						"format": "double"
-					},
-					"stadium_upgrade_cost": {
-						"type": "number",
-						"format": "double"
-					},
-					"can_afford_training_upgrade": {
-						"type": "boolean"
-					},
-					"can_afford_scout_upgrade": {
-						"type": "boolean"
-					},
-					"can_afford_stadium_upgrade": {
-						"type": "boolean"
-					},
-					"budget": {
-						"type": "number",
-						"format": "double"
-					},
-					"success": {
-						"type": "boolean",
-						"description": "Success status",
-						"example": true
-					},
-					"message": {
-						"type": "string",
-						"description": "Response message",
-						"example": "Facility info retrieved successfully"
-					}
-				},
-				"required": [
-					"training_facility_level",
-					"scout_level",
-					"stadium_size",
-					"training_facility_upgrade_cost",
-					"scout_upgrade_cost",
-					"stadium_upgrade_cost",
-					"can_afford_training_upgrade",
-					"can_afford_scout_upgrade",
-					"can_afford_stadium_upgrade",
-					"budget",
-					"success",
-					"message"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"UpgradeFacilityResponseModel": {
-				"description": "Upgrade facility response model",
-				"properties": {
-					"team": {
-						"properties": {
-							"scout_level": {
-								"type": "number",
-								"format": "double",
-								"description": "Scout level (optional)",
-								"example": 2
-							},
-							"training_facility_level": {
-								"type": "number",
-								"format": "double",
-								"description": "Training facility level (optional)",
-								"example": 2
-							},
-							"budget": {
-								"type": "number",
-								"format": "double",
-								"description": "Team budget",
-								"example": 1000
-							},
-							"name": {
-								"type": "string",
-								"description": "Team name",
-								"example": "Dodgeball Dynamos"
-							},
-							"id": {
-								"type": "string",
-								"description": "Team ID",
-								"example": "550e8400-e29b-41d4-a716-446655440000"
-							}
-						},
-						"required": [
-							"budget",
-							"name",
-							"id"
-						],
-						"type": "object",
-						"description": "Updated team information"
-					},
-					"cost": {
-						"type": "number",
-						"format": "double",
-						"description": "Upgrade cost",
-						"example": 500
-					},
-					"success": {
-						"type": "boolean",
-						"description": "Success status",
-						"example": true
-					},
-					"message": {
-						"type": "string",
-						"description": "Response message",
-						"example": "Facility upgraded successfully"
-					}
-				},
-				"required": [
-					"team",
-					"cost",
-					"success",
-					"message"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"UpgradeFacilityRequestModel": {
-				"description": "Upgrade facility request model",
-				"properties": {
-					"facility_type": {
-						"type": "string",
-						"enum": [
-							"training",
-							"scout",
-							"stadium"
-						],
-						"description": "Type of facility to upgrade",
-						"example": "training"
-					}
-				},
-				"required": [
-					"facility_type"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"GetDraftPlayersResponseModel": {
 				"description": "Get draft players response model for tsoa documentation",
 				"properties": {
@@ -801,99 +1256,68 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"FixtureModel": {
-				"description": "Fixture with team names",
+			"EnhancedFixture": {
 				"properties": {
 					"id": {
-						"type": "string",
-						"description": "Fixture ID",
-						"example": "550e8400-e29b-41d4-a716-446655440000"
+						"type": "string"
 					},
 					"game_id": {
-						"type": "string",
-						"description": "Game ID",
-						"example": "550e8400-e29b-41d4-a716-446655440001"
+						"type": "string"
 					},
 					"season": {
 						"type": "number",
-						"format": "double",
-						"description": "Season number",
-						"example": 1
+						"format": "double"
 					},
 					"match_day": {
 						"type": "number",
-						"format": "double",
-						"description": "Match day number",
-						"example": 3
+						"format": "double"
 					},
 					"home_team_id": {
-						"type": "string",
-						"description": "Home team ID",
-						"example": "550e8400-e29b-41d4-a716-446655440002"
+						"type": "string"
 					},
 					"away_team_id": {
-						"type": "string",
-						"description": "Away team ID",
-						"example": "550e8400-e29b-41d4-a716-446655440003"
+						"type": "string"
 					},
 					"home_team_type": {
 						"type": "string",
 						"enum": [
 							"user",
 							"opponent"
-						],
-						"description": "Home team type",
-						"example": "user"
+						]
 					},
 					"away_team_type": {
 						"type": "string",
 						"enum": [
 							"user",
 							"opponent"
-						],
-						"description": "Away team type",
-						"example": "opponent"
+						]
 					},
 					"home_score": {
 						"type": "number",
-						"format": "double",
-						"description": "Home team score",
-						"example": 5
+						"format": "double"
 					},
 					"away_score": {
 						"type": "number",
-						"format": "double",
-						"description": "Away team score",
-						"example": 3
+						"format": "double"
 					},
 					"status": {
 						"type": "string",
 						"enum": [
 							"scheduled",
 							"completed"
-						],
-						"description": "Match status",
-						"example": "completed"
+						]
 					},
 					"played_at": {
-						"type": "string",
-						"description": "When the match was played",
-						"example": "2025-03-31T14:30:00Z"
+						"type": "string"
 					},
 					"created_at": {
-						"type": "string",
-						"description": "When the fixture was created",
-						"example": "2025-03-30T10:00:00Z"
+						"type": "string"
 					},
 					"home_team_name": {
-						"type": "string",
-						"description": "Home team name",
-						"example": "Dodgeball Dynamos"
+						"type": "string"
 					},
 					"away_team_name": {
-						"type": "string",
-						"description": "Away team name",
-						"example": "Throwback Titans"
+						"type": "string"
 					}
 				},
 				"required": [
@@ -906,66 +1330,938 @@
 					"home_team_type",
 					"away_team_type",
 					"status",
-					"created_at"
+					"created_at",
+					"home_team_name",
+					"away_team_name"
 				],
 				"type": "object",
 				"additionalProperties": false
 			},
-			"LeagueTableEntryModel": {
-				"description": "League table entry for tsoa documentation",
+			"PlayerState": {
+				"description": "Represents the state of a player during a game",
 				"properties": {
-					"team_id": {
+					"id": {
 						"type": "string",
-						"description": "Team ID",
-						"example": "550e8400-e29b-41d4-a716-446655440000"
+						"description": "Unique identifier for the player"
 					},
-					"team_name": {
+					"name": {
 						"type": "string",
-						"description": "Team name",
-						"example": "Dodgeball Dynamos"
+						"description": "Name of the player"
 					},
-					"team_type": {
-						"type": "string",
-						"enum": [
-							"user",
-							"opponent"
-						],
-						"description": "Type of team",
-						"example": "user"
+					"isHome": {
+						"type": "boolean",
+						"description": "Whether the player is on the home team"
 					},
-					"played": {
+					"throwing": {
 						"type": "number",
 						"format": "double",
-						"description": "Number of matches played",
-						"example": 5
+						"description": "Player's throwing skill level"
 					},
-					"won": {
+					"catching": {
 						"type": "number",
 						"format": "double",
-						"description": "Number of matches won",
-						"example": 3
+						"description": "Player's catching skill level"
 					},
-					"lost": {
+					"dodging": {
 						"type": "number",
 						"format": "double",
-						"description": "Number of matches lost",
-						"example": 2
+						"description": "Player's dodging skill level"
 					},
-					"points": {
+					"blocking": {
 						"type": "number",
 						"format": "double",
-						"description": "Total points",
-						"example": 9
+						"description": "Player's blocking skill level"
+					},
+					"speed": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's movement speed"
+					},
+					"positionalSense": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's ability to read the court"
+					},
+					"teamwork": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's ability when there are many players still available on their team"
+					},
+					"clutchFactor": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's performance when there are few players still on their team"
+					},
+					"position": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Current position on the court (0-11, null if eliminated)"
+					},
+					"eliminated": {
+						"type": "boolean",
+						"description": "Whether the player has been eliminated"
+					},
+					"ballId": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "ID of the ball held by the player (if any)"
 					}
 				},
 				"required": [
-					"team_id",
-					"team_name",
-					"team_type",
-					"played",
-					"won",
-					"lost",
-					"points"
+					"id",
+					"name",
+					"isHome",
+					"throwing",
+					"catching",
+					"dodging",
+					"blocking",
+					"speed",
+					"positionalSense",
+					"teamwork",
+					"clutchFactor",
+					"position",
+					"eliminated",
+					"ballId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Record_string.PlayerState_": {
+				"properties": {},
+				"additionalProperties": {
+					"$ref": "#/components/schemas/PlayerState"
+				},
+				"type": "object",
+				"description": "Construct a type with a set of properties K of type T"
+			},
+			"BallStatus": {
+				"description": "Enum of possible ball statuses",
+				"enum": [
+					"initial",
+					"free",
+					"held"
+				],
+				"type": "string"
+			},
+			"BallState": {
+				"description": "Represents the state of a ball during a game",
+				"properties": {
+					"status": {
+						"$ref": "#/components/schemas/BallStatus",
+						"description": "Current status of the ball"
+					},
+					"position": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Position of the ball on the court (0-11, null if out of play)"
+					}
+				},
+				"required": [
+					"status",
+					"position"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Record_number.BallState_": {
+				"properties": {},
+				"additionalProperties": {
+					"$ref": "#/components/schemas/BallState"
+				},
+				"type": "object",
+				"description": "Construct a type with a set of properties K of type T"
+			},
+			"RoundState": {
+				"description": "Represents the state of a round",
+				"properties": {
+					"turnOrder": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Order of player turns"
+					}
+				},
+				"required": [
+					"turnOrder"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Partial_GameState_": {
+				"properties": {
+					"gameNumber": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of the current game"
+					},
+					"playerState": {
+						"$ref": "#/components/schemas/Record_string.PlayerState_",
+						"description": "State of each player in the game"
+					},
+					"ballState": {
+						"$ref": "#/components/schemas/Record_number.BallState_",
+						"description": "State of balls in the game"
+					},
+					"roundState": {
+						"$ref": "#/components/schemas/RoundState",
+						"description": "Current round state"
+					},
+					"completed": {
+						"type": "boolean",
+						"description": "Whether the game is completed"
+					}
+				},
+				"type": "object",
+				"description": "Make all properties in T optional"
+			},
+			"PlayerAction": {
+				"description": "Enum of possible player actions",
+				"enum": [
+					"throw",
+					"pick_up",
+					"prepare"
+				],
+				"type": "string"
+			},
+			"PlayerReaction": {
+				"description": "Enum of possible player reactions",
+				"enum": [
+					"catch",
+					"dodge",
+					"block"
+				],
+				"type": "string"
+			},
+			"ActionResult": {
+				"description": "Enum of action results",
+				"enum": [
+					"hit",
+					"miss",
+					"caught",
+					"blocked",
+					"picked_up",
+					"prepared"
+				],
+				"type": "string"
+			},
+			"DeepPartial_PlayerState_": {
+				"properties": {
+					"position": {
+						"type": "number",
+						"format": "double",
+						"description": "Current position on the court (0-11, null if eliminated)"
+					},
+					"eliminated": {
+						"type": "boolean",
+						"description": "Whether the player has been eliminated"
+					},
+					"ballId": {
+						"type": "number",
+						"format": "double",
+						"description": "ID of the ball held by the player (if any)"
+					},
+					"id": {
+						"type": "string",
+						"description": "Unique identifier for the player"
+					},
+					"name": {
+						"type": "string",
+						"description": "Name of the player"
+					},
+					"isHome": {
+						"type": "boolean",
+						"description": "Whether the player is on the home team"
+					},
+					"throwing": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's throwing skill level"
+					},
+					"catching": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's catching skill level"
+					},
+					"dodging": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's dodging skill level"
+					},
+					"blocking": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's blocking skill level"
+					},
+					"speed": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's movement speed"
+					},
+					"positionalSense": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's ability to read the court"
+					},
+					"teamwork": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's ability when there are many players still available on their team"
+					},
+					"clutchFactor": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's performance when there are few players still on their team"
+					}
+				},
+				"type": "object",
+				"description": "Utility type that makes all properties and nested properties optional\nThis is useful for state updates where you only want to specify the properties that changed"
+			},
+			"DeepPartial_Record_string.PlayerState__": {
+				"properties": {},
+				"additionalProperties": {
+					"$ref": "#/components/schemas/DeepPartial_PlayerState_"
+				},
+				"type": "object",
+				"description": "Utility type that makes all properties and nested properties optional\nThis is useful for state updates where you only want to specify the properties that changed"
+			},
+			"DeepPartial_BallState_": {
+				"properties": {
+					"status": {
+						"$ref": "#/components/schemas/BallStatus",
+						"description": "Current status of the ball"
+					},
+					"position": {
+						"type": "number",
+						"format": "double",
+						"description": "Position of the ball on the court (0-11, null if out of play)"
+					}
+				},
+				"type": "object",
+				"description": "Utility type that makes all properties and nested properties optional\nThis is useful for state updates where you only want to specify the properties that changed"
+			},
+			"DeepPartial_Record_number.BallState__": {
+				"properties": {},
+				"additionalProperties": {
+					"$ref": "#/components/schemas/DeepPartial_BallState_"
+				},
+				"type": "object",
+				"description": "Utility type that makes all properties and nested properties optional\nThis is useful for state updates where you only want to specify the properties that changed"
+			},
+			"DeepPartial_RoundState_": {
+				"properties": {
+					"turnOrder": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Order of player turns"
+					}
+				},
+				"type": "object",
+				"description": "Utility type that makes all properties and nested properties optional\nThis is useful for state updates where you only want to specify the properties that changed"
+			},
+			"DeepPartial_GameState_": {
+				"properties": {
+					"gameNumber": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of the current game"
+					},
+					"playerState": {
+						"$ref": "#/components/schemas/DeepPartial_Record_string.PlayerState__",
+						"description": "State of each player in the game"
+					},
+					"ballState": {
+						"$ref": "#/components/schemas/DeepPartial_Record_number.BallState__",
+						"description": "State of balls in the game"
+					},
+					"roundState": {
+						"$ref": "#/components/schemas/DeepPartial_RoundState_",
+						"description": "Current round state"
+					},
+					"completed": {
+						"type": "boolean",
+						"description": "Whether the game is completed"
+					}
+				},
+				"type": "object",
+				"description": "Utility type that makes all properties and nested properties optional\nThis is useful for state updates where you only want to specify the properties that changed"
+			},
+			"TsoaTurn": {
+				"properties": {
+					"playerId": {
+						"type": "string",
+						"description": "ID of the player taking the turn"
+					},
+					"action": {
+						"$ref": "#/components/schemas/PlayerAction",
+						"description": "Primary action taken by the player"
+					},
+					"reaction": {
+						"$ref": "#/components/schemas/PlayerReaction",
+						"description": "Reaction to an action (optional)"
+					},
+					"newPosition": {
+						"type": "number",
+						"format": "double",
+						"description": "New position on the court after the turn"
+					},
+					"eliminatedPlayerId": {
+						"type": "string",
+						"description": "ID of a player eliminated during this turn"
+					},
+					"reEnteredPlayerId": {
+						"type": "string",
+						"description": "ID of a player re-entering the game for catches"
+					},
+					"ballId": {
+						"type": "number",
+						"format": "double",
+						"description": "ID of the ball involved in the turn"
+					},
+					"actionResult": {
+						"$ref": "#/components/schemas/ActionResult",
+						"description": "Result of the player's action"
+					},
+					"endTurnGameStateUpdate": {
+						"$ref": "#/components/schemas/Partial_GameState_",
+						"description": "Partial updates to game state at turn end. This should be applied with a deep merge"
+					}
+				},
+				"required": [
+					"playerId",
+					"action",
+					"endTurnGameStateUpdate"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Turn": {
+				"description": "Represents a single turn in a round",
+				"properties": {
+					"playerId": {
+						"type": "string",
+						"description": "ID of the player taking the turn"
+					},
+					"action": {
+						"$ref": "#/components/schemas/PlayerAction",
+						"description": "Primary action taken by the player"
+					},
+					"reaction": {
+						"$ref": "#/components/schemas/PlayerReaction",
+						"description": "Reaction to an action (optional)"
+					},
+					"newPosition": {
+						"type": "number",
+						"format": "double",
+						"description": "New position on the court after the turn"
+					},
+					"eliminatedPlayerId": {
+						"type": "string",
+						"description": "ID of a player eliminated during this turn"
+					},
+					"reEnteredPlayerId": {
+						"type": "string",
+						"description": "ID of a player re-entering the game for catches"
+					},
+					"ballId": {
+						"type": "number",
+						"format": "double",
+						"description": "ID of the ball involved in the turn"
+					},
+					"actionResult": {
+						"$ref": "#/components/schemas/ActionResult",
+						"description": "Result of the player's action"
+					},
+					"endTurnGameStateUpdate": {
+						"$ref": "#/components/schemas/DeepPartial_GameState_",
+						"description": "Partial updates to game state at turn end. This should be applied with a deep merge"
+					}
+				},
+				"required": [
+					"playerId",
+					"action",
+					"endTurnGameStateUpdate"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TsoaRound": {
+				"properties": {
+					"turns": {
+						"items": {
+							"$ref": "#/components/schemas/TsoaTurn"
+						},
+						"type": "array",
+						"description": "Turns taken in this round"
+					},
+					"initialRoundState": {
+						"$ref": "#/components/schemas/RoundState",
+						"description": "Initial state of the round. Use this to create your roundState object"
+					}
+				},
+				"required": [
+					"turns",
+					"initialRoundState"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Partial_MatchState_": {
+				"properties": {
+					"currentGame": {
+						"type": "number",
+						"format": "double",
+						"description": "Current game number in the match"
+					},
+					"completed": {
+						"type": "boolean",
+						"description": "Whether the match is completed"
+					},
+					"homeScore": {
+						"type": "number",
+						"format": "double",
+						"description": "Score for the home team"
+					},
+					"awayScore": {
+						"type": "number",
+						"format": "double",
+						"description": "Score for the away team"
+					}
+				},
+				"type": "object",
+				"description": "Make all properties in T optional"
+			},
+			"Round": {
+				"description": "Represents a round within a game",
+				"properties": {
+					"turns": {
+						"items": {
+							"$ref": "#/components/schemas/Turn"
+						},
+						"type": "array",
+						"description": "Turns taken in this round"
+					},
+					"initialRoundState": {
+						"$ref": "#/components/schemas/RoundState",
+						"description": "Initial state of the round. Use this to create your roundState object"
+					}
+				},
+				"required": [
+					"turns",
+					"initialRoundState"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GameState": {
+				"description": "Represents the state of a game at a specific point",
+				"properties": {
+					"gameNumber": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of the current game"
+					},
+					"playerState": {
+						"$ref": "#/components/schemas/Record_string.PlayerState_",
+						"description": "State of each player in the game"
+					},
+					"ballState": {
+						"$ref": "#/components/schemas/Record_number.BallState_",
+						"description": "State of balls in the game"
+					},
+					"roundState": {
+						"$ref": "#/components/schemas/RoundState",
+						"description": "Current round state"
+					},
+					"completed": {
+						"type": "boolean",
+						"description": "Whether the game is completed"
+					}
+				},
+				"required": [
+					"gameNumber",
+					"playerState",
+					"ballState",
+					"roundState",
+					"completed"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DeepPartial_MatchState_": {
+				"properties": {
+					"currentGame": {
+						"type": "number",
+						"format": "double",
+						"description": "Current game number in the match"
+					},
+					"completed": {
+						"type": "boolean",
+						"description": "Whether the match is completed"
+					},
+					"homeScore": {
+						"type": "number",
+						"format": "double",
+						"description": "Score for the home team"
+					},
+					"awayScore": {
+						"type": "number",
+						"format": "double",
+						"description": "Score for the away team"
+					}
+				},
+				"type": "object",
+				"description": "Utility type that makes all properties and nested properties optional\nThis is useful for state updates where you only want to specify the properties that changed"
+			},
+			"TsoaGame": {
+				"properties": {
+					"gameNumber": {
+						"type": "number",
+						"format": "double",
+						"description": "Sequential number of the game in the match"
+					},
+					"rounds": {
+						"items": {
+							"$ref": "#/components/schemas/TsoaRound"
+						},
+						"type": "array",
+						"description": "Rounds played in this game. Each round is a set of turns, one for each player"
+					},
+					"homeTeamPlayersRemaining": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of home team players remaining at the end of the game"
+					},
+					"awayTeamPlayersRemaining": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of away team players remaining at the end of the game"
+					},
+					"winner": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "string",
+								"enum": [
+									"tie"
+								]
+							}
+						],
+						"nullable": true,
+						"description": "Winner of the game (team ID or 'tie')"
+					},
+					"initialGameState": {
+						"$ref": "#/components/schemas/GameState",
+						"description": "Initial state of the game before simulation. Use this to set up your game state object"
+					},
+					"endGameMatchStateUpdate": {
+						"$ref": "#/components/schemas/Partial_MatchState_",
+						"description": "Partial updates to match state at game end. This must be a deep merge"
+					}
+				},
+				"required": [
+					"gameNumber",
+					"rounds",
+					"homeTeamPlayersRemaining",
+					"awayTeamPlayersRemaining",
+					"winner",
+					"initialGameState",
+					"endGameMatchStateUpdate"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MatchPlayer": {
+				"description": "Represents a player in a match with their attributes",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "Unique identifier for the player"
+					},
+					"name": {
+						"type": "string",
+						"description": "Name of the player"
+					},
+					"isHome": {
+						"type": "boolean",
+						"description": "Whether the player is on the home team"
+					},
+					"throwing": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's throwing skill level"
+					},
+					"catching": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's catching skill level"
+					},
+					"dodging": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's dodging skill level"
+					},
+					"blocking": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's blocking skill level"
+					},
+					"speed": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's movement speed"
+					},
+					"positionalSense": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's ability to read the court"
+					},
+					"teamwork": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's ability when there are many players still available on their team"
+					},
+					"clutchFactor": {
+						"type": "number",
+						"format": "double",
+						"description": "Player's performance when there are few players still on their team"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"isHome",
+					"throwing",
+					"catching",
+					"dodging",
+					"blocking",
+					"speed",
+					"positionalSense",
+					"teamwork",
+					"clutchFactor"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Team": {
+				"description": "Represents a team in the dodgeball match",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "Unique identifier for the team"
+					},
+					"name": {
+						"type": "string",
+						"description": "Name of the team"
+					},
+					"players": {
+						"items": {
+							"$ref": "#/components/schemas/MatchPlayer"
+						},
+						"type": "array",
+						"description": "Players in the team"
+					},
+					"isHome": {
+						"type": "boolean",
+						"description": "Whether this team is the home team"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"players",
+					"isHome"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Game": {
+				"description": "Represents a single game within a match",
+				"properties": {
+					"gameNumber": {
+						"type": "number",
+						"format": "double",
+						"description": "Sequential number of the game in the match"
+					},
+					"rounds": {
+						"items": {
+							"$ref": "#/components/schemas/Round"
+						},
+						"type": "array",
+						"description": "Rounds played in this game. Each round is a set of turns, one for each player"
+					},
+					"homeTeamPlayersRemaining": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of home team players remaining at the end of the game"
+					},
+					"awayTeamPlayersRemaining": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of away team players remaining at the end of the game"
+					},
+					"winner": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "string",
+								"enum": [
+									"tie"
+								]
+							}
+						],
+						"nullable": true,
+						"description": "Winner of the game (team ID or 'tie')"
+					},
+					"initialGameState": {
+						"$ref": "#/components/schemas/GameState",
+						"description": "Initial state of the game before simulation. Use this to set up your game state object"
+					},
+					"endGameMatchStateUpdate": {
+						"$ref": "#/components/schemas/DeepPartial_MatchState_",
+						"description": "Partial updates to match state at game end. This must be a deep merge"
+					}
+				},
+				"required": [
+					"gameNumber",
+					"rounds",
+					"homeTeamPlayersRemaining",
+					"awayTeamPlayersRemaining",
+					"winner",
+					"initialGameState",
+					"endGameMatchStateUpdate"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MatchState": {
+				"description": "Represents the overall state of a match",
+				"properties": {
+					"currentGame": {
+						"type": "number",
+						"format": "double",
+						"description": "Current game number in the match"
+					},
+					"completed": {
+						"type": "boolean",
+						"description": "Whether the match is completed"
+					},
+					"homeScore": {
+						"type": "number",
+						"format": "double",
+						"description": "Score for the home team"
+					},
+					"awayScore": {
+						"type": "number",
+						"format": "double",
+						"description": "Score for the away team"
+					}
+				},
+				"required": [
+					"currentGame",
+					"completed",
+					"homeScore",
+					"awayScore"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MatchSimulationResponse": {
+				"properties": {
+					"homeTeam": {
+						"$ref": "#/components/schemas/Team",
+						"description": "Home team participating in the match"
+					},
+					"awayTeam": {
+						"$ref": "#/components/schemas/Team",
+						"description": "Away team participating in the match"
+					},
+					"homeScore": {
+						"type": "number",
+						"format": "double",
+						"description": "Final score for the home team"
+					},
+					"awayScore": {
+						"type": "number",
+						"format": "double",
+						"description": "Final score for the away team"
+					},
+					"winner": {
+						"type": "string",
+						"nullable": true,
+						"description": "Team ID of the winner, or null if it's a draw"
+					},
+					"games": {
+						"items": {
+							"$ref": "#/components/schemas/Game"
+						},
+						"type": "array",
+						"description": "Individual games played in the match"
+					},
+					"initialMatchState": {
+						"$ref": "#/components/schemas/MatchState",
+						"description": "Initial state of the match before simulation. Use this to set up your match state object"
+					},
+					"game": {
+						"$ref": "#/components/schemas/TsoaGame"
+					}
+				},
+				"required": [
+					"homeTeam",
+					"awayTeam",
+					"homeScore",
+					"awayScore",
+					"winner",
+					"games",
+					"initialMatchState",
+					"game"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PlayMatchResponse": {
+				"description": "Response model for playing a match",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Indicates if the operation was successful"
+					},
+					"message": {
+						"type": "string",
+						"description": "Descriptive message about the operation result"
+					},
+					"match": {
+						"$ref": "#/components/schemas/EnhancedFixture",
+						"description": "The match that was played"
+					},
+					"match_day": {
+						"type": "number",
+						"format": "double",
+						"description": "The match day of the played match"
+					},
+					"other_match": {
+						"$ref": "#/components/schemas/EnhancedFixture",
+						"description": "Optional other match played in the same match day"
+					},
+					"simulated_match": {
+						"$ref": "#/components/schemas/MatchSimulationResponse",
+						"description": "Optional detailed simulation data from the match engine"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"match",
+					"match_day"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1013,24 +2309,6 @@
 				],
 				"type": "object",
 				"additionalProperties": false
-			},
-			"GameStatus": {
-				"type": "string",
-				"enum": [
-					"pending",
-					"in_progress",
-					"completed"
-				]
-			},
-			"GameStage": {
-				"type": "string",
-				"enum": [
-					"draft",
-					"pre_season",
-					"regular_season",
-					"post_season",
-					"off_season"
-				]
 			},
 			"CurrentGameResponseModel": {
 				"description": "Current game response model for tsoa documentation",
@@ -1198,62 +2476,45 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"StartMainSeasonResponseModel": {
-				"description": "Start main season response model",
+			"GetFacilityInfoResponseModel": {
+				"description": "Get facility info response model for tsoa documentation",
 				"properties": {
-					"game": {
-						"properties": {
-							"game_stage": {
-								"$ref": "#/components/schemas/GameStage",
-								"description": "Game stage",
-								"example": "regular_season"
-							},
-							"status": {
-								"$ref": "#/components/schemas/GameStatus",
-								"description": "Game status",
-								"example": "in_progress"
-							},
-							"match_day": {
-								"type": "number",
-								"format": "double",
-								"description": "Game match day",
-								"example": 1
-							},
-							"season": {
-								"type": "number",
-								"format": "double",
-								"description": "Game season",
-								"example": 1
-							},
-							"id": {
-								"type": "string",
-								"description": "Game ID",
-								"example": "550e8400-e29b-41d4-a716-446655440000"
-							}
-						},
-						"required": [
-							"game_stage",
-							"status",
-							"match_day",
-							"season",
-							"id"
-						],
-						"type": "object",
-						"description": "Game data"
+					"training_facility_level": {
+						"type": "number",
+						"format": "double"
 					},
-					"fixtures": {
-						"items": {
-							"$ref": "#/components/schemas/FixtureModel"
-						},
-						"type": "array",
-						"description": "List of fixtures"
+					"scout_level": {
+						"type": "number",
+						"format": "double"
 					},
-					"table": {
-						"items": {
-							"$ref": "#/components/schemas/LeagueTableEntryModel"
-						},
-						"type": "array",
-						"description": "League table"
+					"stadium_size": {
+						"type": "number",
+						"format": "double"
+					},
+					"training_facility_upgrade_cost": {
+						"type": "number",
+						"format": "double"
+					},
+					"scout_upgrade_cost": {
+						"type": "number",
+						"format": "double"
+					},
+					"stadium_upgrade_cost": {
+						"type": "number",
+						"format": "double"
+					},
+					"can_afford_training_upgrade": {
+						"type": "boolean"
+					},
+					"can_afford_scout_upgrade": {
+						"type": "boolean"
+					},
+					"can_afford_stadium_upgrade": {
+						"type": "boolean"
+					},
+					"budget": {
+						"type": "number",
+						"format": "double"
 					},
 					"success": {
 						"type": "boolean",
@@ -1263,15 +2524,110 @@
 					"message": {
 						"type": "string",
 						"description": "Response message",
-						"example": "Main season started successfully"
+						"example": "Facility info retrieved successfully"
 					}
 				},
 				"required": [
-					"game",
-					"fixtures",
-					"table",
+					"training_facility_level",
+					"scout_level",
+					"stadium_size",
+					"training_facility_upgrade_cost",
+					"scout_upgrade_cost",
+					"stadium_upgrade_cost",
+					"can_afford_training_upgrade",
+					"can_afford_scout_upgrade",
+					"can_afford_stadium_upgrade",
+					"budget",
 					"success",
 					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpgradeFacilityResponseModel": {
+				"description": "Upgrade facility response model",
+				"properties": {
+					"team": {
+						"properties": {
+							"scout_level": {
+								"type": "number",
+								"format": "double",
+								"description": "Scout level (optional)",
+								"example": 2
+							},
+							"training_facility_level": {
+								"type": "number",
+								"format": "double",
+								"description": "Training facility level (optional)",
+								"example": 2
+							},
+							"budget": {
+								"type": "number",
+								"format": "double",
+								"description": "Team budget",
+								"example": 1000
+							},
+							"name": {
+								"type": "string",
+								"description": "Team name",
+								"example": "Dodgeball Dynamos"
+							},
+							"id": {
+								"type": "string",
+								"description": "Team ID",
+								"example": "550e8400-e29b-41d4-a716-446655440000"
+							}
+						},
+						"required": [
+							"budget",
+							"name",
+							"id"
+						],
+						"type": "object",
+						"description": "Updated team information"
+					},
+					"cost": {
+						"type": "number",
+						"format": "double",
+						"description": "Upgrade cost",
+						"example": 500
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Facility upgraded successfully"
+					}
+				},
+				"required": [
+					"team",
+					"cost",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpgradeFacilityRequestModel": {
+				"description": "Upgrade facility request model",
+				"properties": {
+					"facility_type": {
+						"type": "string",
+						"enum": [
+							"training",
+							"scout",
+							"stadium"
+						],
+						"description": "Type of facility to upgrade",
+						"example": "training"
+					}
+				},
+				"required": [
+					"facility_type"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1303,15 +2659,20 @@
 						"description": "Transfer list retrieved successfully",
 						"content": {
 							"application/json": {
-								"schema": {}
+								"schema": {
+									"$ref": "#/components/schemas/GetTransferListResponse"
+								}
 							}
 						}
 					}
 				},
 				"description": "Get the list of players available for transfer",
+				"tags": [
+					"Transfers"
+				],
 				"security": [
 					{
-						"jwt": []
+						"bearerAuth": []
 					}
 				],
 				"parameters": []
@@ -1325,15 +2686,20 @@
 						"description": "Player bought successfully",
 						"content": {
 							"application/json": {
-								"schema": {}
+								"schema": {
+									"$ref": "#/components/schemas/BuyTransferListedPlayerResponse"
+								}
 							}
 						}
 					}
 				},
 				"description": "Buy a player from the transfer list",
+				"tags": [
+					"Transfers"
+				],
 				"security": [
 					{
-						"jwt": []
+						"bearerAuth": []
 					}
 				],
 				"parameters": [],
@@ -1342,15 +2708,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"properties": {
-									"player_id": {
-										"type": "string"
-									}
-								},
-								"required": [
-									"player_id"
-								],
-								"type": "object"
+								"$ref": "#/components/schemas/BuyTransferListedPlayerRequest"
 							}
 						}
 					}
@@ -1365,15 +2723,20 @@
 						"description": "Player sold successfully",
 						"content": {
 							"application/json": {
-								"schema": {}
+								"schema": {
+									"$ref": "#/components/schemas/SellPlayerResponse"
+								}
 							}
 						}
 					}
 				},
 				"description": "Sell a player from the team",
+				"tags": [
+					"Transfers"
+				],
 				"security": [
 					{
-						"jwt": []
+						"bearerAuth": []
 					}
 				],
 				"parameters": [],
@@ -1382,22 +2745,14 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"properties": {
-									"player_id": {
-										"type": "string"
-									}
-								},
-								"required": [
-									"player_id"
-								],
-								"type": "object"
+								"$ref": "#/components/schemas/SellPlayerRequest"
 							}
 						}
 					}
 				}
 			}
 		},
-		"/seasons/training-info": {
+		"/training/training-info": {
 			"get": {
 				"operationId": "GetSeasonTrainingInfo",
 				"responses": {
@@ -1414,7 +2769,7 @@
 				},
 				"description": "Get training information for the current season",
 				"tags": [
-					"Seasons"
+					"Training"
 				],
 				"security": [
 					{
@@ -1424,7 +2779,7 @@
 				"parameters": []
 			}
 		},
-		"/seasons/train-player": {
+		"/training/train-player": {
 			"post": {
 				"operationId": "TrainPlayer",
 				"responses": {
@@ -1441,7 +2796,7 @@
 				},
 				"description": "Train a player by improving one of their stats",
 				"tags": [
-					"Seasons"
+					"Training"
 				],
 				"security": [
 					{
@@ -1463,7 +2818,62 @@
 				}
 			}
 		},
-		"/seasons/scouting-info": {
+		"/seasons/start-main-season": {
+			"post": {
+				"operationId": "StartMainSeason",
+				"responses": {
+					"200": {
+						"description": "Main season started successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StartMainSeasonResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Start the main season by transitioning from pre-season to regular season",
+				"summary": "Start main season",
+				"tags": [
+					"Seasons"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/seasons/end-season": {
+			"post": {
+				"operationId": "EndSeason",
+				"responses": {
+					"200": {
+						"description": "Season ended successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EndSeasonResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "End the current season and handle promotions/relegations",
+				"tags": [
+					"Seasons"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/scouting/scouting-info": {
 			"get": {
 				"operationId": "GetSeasonScoutingInfo",
 				"responses": {
@@ -1480,7 +2890,7 @@
 				},
 				"description": "Get scouting information for the current season",
 				"tags": [
-					"Seasons"
+					"Scouting"
 				],
 				"security": [
 					{
@@ -1490,7 +2900,7 @@
 				"parameters": []
 			}
 		},
-		"/seasons/scouted-players": {
+		"/scouting/scouted-players": {
 			"get": {
 				"operationId": "GetScoutedPlayers",
 				"responses": {
@@ -1507,7 +2917,7 @@
 				},
 				"description": "Get all scouted players for the current season",
 				"tags": [
-					"Seasons"
+					"Scouting"
 				],
 				"security": [
 					{
@@ -1517,7 +2927,7 @@
 				"parameters": []
 			}
 		},
-		"/seasons/scout-players": {
+		"/scouting/scout-players": {
 			"post": {
 				"operationId": "ScoutPlayers",
 				"responses": {
@@ -1534,7 +2944,7 @@
 				},
 				"description": "Generate scouted players for the current season",
 				"tags": [
-					"Seasons"
+					"Scouting"
 				],
 				"security": [
 					{
@@ -1556,7 +2966,7 @@
 				}
 			}
 		},
-		"/seasons/purchase-scouted-player": {
+		"/scouting/purchase-scouted-player": {
 			"post": {
 				"operationId": "PurchaseScoutedPlayer",
 				"responses": {
@@ -1573,7 +2983,7 @@
 				},
 				"description": "Purchase a scouted player for the team",
 				"tags": [
-					"Seasons"
+					"Scouting"
 				],
 				"security": [
 					{
@@ -1589,72 +2999,6 @@
 							"schema": {
 								"$ref": "#/components/schemas/PurchaseScoutedPlayerRequestModel",
 								"description": "Details of the scouted player to purchase"
-							}
-						}
-					}
-				}
-			}
-		},
-		"/seasons/facility-info": {
-			"get": {
-				"operationId": "GetFacilityInfo",
-				"responses": {
-					"200": {
-						"description": "Facility info retrieved successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/GetFacilityInfoResponseModel"
-								}
-							}
-						}
-					}
-				},
-				"description": "Get facility information",
-				"tags": [
-					"Seasons"
-				],
-				"security": [
-					{
-						"bearerAuth": []
-					}
-				],
-				"parameters": []
-			}
-		},
-		"/seasons/upgrade-facility": {
-			"post": {
-				"operationId": "UpgradeFacility",
-				"responses": {
-					"200": {
-						"description": "Facility upgraded successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/UpgradeFacilityResponseModel"
-								}
-							}
-						}
-					}
-				},
-				"description": "Upgrade a facility",
-				"tags": [
-					"Seasons"
-				],
-				"security": [
-					{
-						"bearerAuth": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"description": "Details of the facility to upgrade",
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/UpgradeFacilityRequestModel",
-								"description": "Details of the facility to upgrade"
 							}
 						}
 					}
@@ -1762,37 +3106,20 @@
 						"description": "Match played successfully",
 						"content": {
 							"application/json": {
-								"schema": {}
+								"schema": {
+									"$ref": "#/components/schemas/PlayMatchResponse"
+								}
 							}
 						}
 					}
 				},
 				"description": "Play the next scheduled match",
-				"security": [
-					{
-						"jwt": []
-					}
+				"tags": [
+					"Matches"
 				],
-				"parameters": []
-			}
-		},
-		"/matches/end-season": {
-			"post": {
-				"operationId": "EndSeason",
-				"responses": {
-					"200": {
-						"description": "Season ended successfully",
-						"content": {
-							"application/json": {
-								"schema": {}
-							}
-						}
-					}
-				},
-				"description": "End the current season and handle promotions/relegations",
 				"security": [
 					{
-						"jwt": []
+						"bearerAuth": []
 					}
 				],
 				"parameters": []
@@ -1930,25 +3257,24 @@
 				"parameters": []
 			}
 		},
-		"/games/start-main-season": {
-			"post": {
-				"operationId": "StartMainSeason",
+		"/facilities/facility-info": {
+			"get": {
+				"operationId": "GetFacilityInfo",
 				"responses": {
 					"200": {
-						"description": "Main season started successfully",
+						"description": "Facility info retrieved successfully",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/StartMainSeasonResponseModel"
+									"$ref": "#/components/schemas/GetFacilityInfoResponseModel"
 								}
 							}
 						}
 					}
 				},
-				"description": "Start the main season by transitioning from pre-season to regular season",
-				"summary": "Start main season",
+				"description": "Get facility information",
 				"tags": [
-					"Games"
+					"Facilities"
 				],
 				"security": [
 					{
@@ -1956,6 +3282,45 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/facilities/upgrade-facility": {
+			"post": {
+				"operationId": "UpgradeFacility",
+				"responses": {
+					"200": {
+						"description": "Facility upgraded successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UpgradeFacilityResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Upgrade a facility",
+				"tags": [
+					"Facilities"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"description": "Details of the facility to upgrade",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpgradeFacilityRequestModel",
+								"description": "Details of the facility to upgrade"
+							}
+						}
+					}
+				}
 			}
 		}
 	},

@@ -1,11 +1,19 @@
-import { Season, SeasonTrainingInfo, SeasonScoutingInfo, ScoutedPlayer, FacilityInfo } from '../types';
+import { Season, SeasonTrainingInfo, SeasonScoutingInfo, ScoutedPlayer, FacilityInfo, Fixture, OpponentTeam } from '../types';
 import { TRAINING_CONSTANTS, SCOUTING_CONSTANTS, GAME_STAGE } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import { FacilityUpgradeCalculator } from '../utils/facility-upgrade-calculator';
 import * as seasonRepository from '../repositories/seasonRepository';
 import * as teamRepository from '../repositories/teamRepository';
-import * as scoutRepository from '../repositories/scoutRepository';
-import { UpgradeFacilityResponse, UpgradeFacilityResponseModel } from '../models/SeasonModels';
+import * as gameRepository from '../repositories/gameRepository';
+import { EndSeasonResponse } from '../models/SeasonModels';
+import leagueService from './league.service';
+import { StartMainSeasonResponse } from '../models/GameModels';
+import { getSeasonFixtures, addTeamToNextSeason } from '../repositories/matchRepository';
+import { checkTeamPromotion } from '../utils/matchUtils';
+import { updateTeamFinances } from '../repositories/budgetRepository';
+import { getIncompleteFixtures } from '../repositories/fixtureRepository';
+import { getTeamPlayers } from '../repositories/playerRepository';
+import { calculateStadiumIncome } from '../utils/seasonUtils';
 
 class SeasonService {
   /**
@@ -79,371 +87,274 @@ class SeasonService {
   }
 
   /**
-   * Get training information for the current season
-   * @param teamId The team ID
-   * @param token The JWT token of the authenticated user
-   * @returns The season's training information
-   */
-  async getSeasonTrainingInfo(teamId: string, token: string): Promise<SeasonTrainingInfo> {
-    try {
-      // Get the current season
-      const currentSeason = await this.getCurrentSeason(teamId, token);
-      
-      // Get the team's training facility level
-      const team = await teamRepository.getTeamById(teamId, token);
-      if (!team) {
-        throw new ApiError(404, 'Team not found');
-      }
-      
-      // Calculate and return training credits info
-      const trainingInfo = this.calculateTrainingCredits(currentSeason, team.training_facility_level);
-      return trainingInfo;
-    } catch (error) {
-      console.error('SeasonService.getSeasonTrainingInfo error:', error);
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(500, 'Failed to get season training info');
-    }
-  }
-
-  /**
-   * Get scouting information for the current season
-   * @param teamId The team ID
-   * @param token The JWT token of the authenticated user
-   * @returns The season's scouting information
-   */
-  async getSeasonScoutingInfo(teamId: string, token: string): Promise<SeasonScoutingInfo> {
-    try {
-      // Get the current season
-      const currentSeason = await this.getCurrentSeason(teamId, token);
-      
-      // Get the team's scout level
-      const team = await teamRepository.getTeamById(teamId, token);
-      if (!team) {
-        throw new ApiError(404, 'Team not found');
-      }
-      
-      // Calculate and return scouting credits info
-      const scoutingInfo = this.calculateScoutingCredits(currentSeason, team.scout_level);
-      return scoutingInfo;
-    } catch (error) {
-      console.error('SeasonService.getSeasonScoutingInfo error:', error);
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(500, 'Failed to get season scouting info');
-    }
-  }
-
-  /**
-   * Get all scouted players for the current season
-   * @param teamId The team ID
-   * @param token The JWT token of the authenticated user
-   * @returns All scouted players including their player details
-   */
-  async getScoutedPlayers(teamId: string, token: string): Promise<ScoutedPlayer[]> {
-    try {
-      // Get the current season
-      const currentSeason = await this.getCurrentSeason(teamId, token);
-      
-      // Get scouted players using the repository
-      return await scoutRepository.getScoutedPlayersForSeason(currentSeason.id, token);
-    } catch (error) {
-      console.error('SeasonService.getScoutedPlayers error:', error);
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(500, 'Failed to get scouted players');
-    }
-  }
-
-  /**
-   * Update the training credits used for a season
-   * @param seasonId The season ID
-   * @param creditsUsed The number of credits to add to the used count
-   * @returns The updated season data
-   */
-  async updateTrainingCreditsUsed(seasonId: string, creditsUsed: number = 1): Promise<Season> {
-    try {
-      return await seasonRepository.updateTrainingCreditsUsed(seasonId, creditsUsed);
-    } catch (error) {
-      console.error('SeasonService.updateTrainingCreditsUsed error:', error);
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(500, 'Failed to update training credits');
-    }
-  }
-
-  /**
-   * Update the scouting credits used for a season
-   * @param seasonId The season ID
-   * @param creditsUsed The number of credits to add to the used count
-   * @returns The updated season data
-   */
-  async updateScoutingCreditsUsed(seasonId: string, creditsUsed: number = 1): Promise<Season> {
-    try {
-      return await seasonRepository.updateScoutingCreditsUsed(seasonId, creditsUsed);
-    } catch (error) {
-      console.error('SeasonService.updateScoutingCreditsUsed error:', error);
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(500, 'Failed to update scouting credits');
-    }
-  }
-
-  /**
-   * Calculate training credits for a season
-   * @param season The season to calculate credits for
-   * @param trainingFacilityLevel The team's training facility level
-   * @returns The season's training information
-   */
-  calculateTrainingCredits(season: Season, trainingFacilityLevel: number): SeasonTrainingInfo {
-    // Get the total credits available based on training facility level
-    const level = Math.min(Math.max(trainingFacilityLevel, 1), 5);
-    const creditsAvailable = TRAINING_CONSTANTS.CREDITS_BY_LEVEL[level as 1 | 2 | 3 | 4 | 5];
-    
-    // Calculate remaining credits
-    const creditsUsed = season.training_credits_used || 0;
-    const creditsRemaining = Math.max(0, creditsAvailable - creditsUsed);
-    
-    return {
-      id: season.id,
-      season_number: season.season_number,
-      team_id: season.team_id,
-      training_facility_level: trainingFacilityLevel,
-      training_credits_used: creditsUsed,
-      training_credits_available: creditsAvailable,
-      training_credits_remaining: creditsRemaining
-    };
-  }
-
-  /**
-   * Calculate scouting credits for a season
-   * @param season The season to calculate credits for
-   * @param scoutLevel The team's scout level
-   * @returns The season's scouting information
-   */
-  calculateScoutingCredits(season: Season, scoutLevel: number): SeasonScoutingInfo {
-    // Get the total credits available based on scout level
-    const level = Math.min(Math.max(scoutLevel, 1), 5);
-    const creditsAvailable = SCOUTING_CONSTANTS.CREDITS_BY_LEVEL[level as 1 | 2 | 3 | 4 | 5];
-    
-    // Calculate remaining credits
-    const creditsUsed = season.scouting_credits_used || 0;
-    const creditsRemaining = Math.max(0, creditsAvailable - creditsUsed);
-    
-    return {
-      id: season.id,
-      season_number: season.season_number,
-      team_id: season.team_id,
-      scout_level: scoutLevel,
-      scouting_credits_used: creditsUsed,
-      scouting_credits_available: creditsAvailable,
-      scouting_credits_remaining: creditsRemaining
-    };
-  }
-
-  /**
-   * Get information about team facilities and possible upgrades
+   * Start the main season for a game
    * 
-   * @param teamId Team ID
-   * @param token JWT token
-   * @returns Facility information including current levels and upgrade costs
+   * @param gameId The game ID
+   * @param token JWT token for authentication
+   * @returns The updated game
    */
-  async getFacilityInfo(teamId: string, token: string): Promise<FacilityInfo> {
+  async startMainSeason(gameId: string, token: string): Promise<StartMainSeasonResponse> {
     try {
-      // Get the team information
-      const team = await teamRepository.getTeamById(teamId, token);
-      if (!team) {
+      // Validate game state
+      await this.validateGameForSeasonStart(gameId, token);
+      
+      // Get the user's team
+      const userTeam = await teamRepository.getTeamByGameId(gameId, token);
+      
+      if (!userTeam) {
         throw new ApiError(404, 'Team not found');
       }
       
-      // Calculate upgrade costs and affordability
-      const { upgradeCosts, affordability } = this.calculateFacilityUpgrades(team);
+      // Generate league components
+      await this.generateLeagueComponents(
+        gameId, 
+        userTeam.id, 
+        token
+      );
+
+      const league = await leagueService.getLeague(gameId, token);
+      
+      // Update the game stage to regular season
+      const updatedGame = await gameRepository.updateGameStage(gameId, GAME_STAGE.REGULAR_SEASON);
       
       return {
-        training_facility_level: team.training_facility_level,
-        scout_level: team.scout_level,
-        stadium_size: team.stadium_size,
-        training_facility_upgrade_cost: upgradeCosts.training,
-        scout_upgrade_cost: upgradeCosts.scout,
-        stadium_upgrade_cost: upgradeCosts.stadium,
-        can_afford_training_upgrade: affordability.training,
-        can_afford_scout_upgrade: affordability.scout,
-        can_afford_stadium_upgrade: affordability.stadium,
-        budget: team.budget
-        
+        game: updatedGame,
+        fixtures: league.fixtures,
+        table: league.table
       };
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
       }
-      console.error('Error in getFacilityInfo:', error);
-      throw new ApiError(500, 'Failed to get facility information');
+      console.error('Error in startMainSeason:', error);
+      throw new ApiError(500, 'Failed to start main season');
     }
   }
-  
+
   /**
-   * Calculate facility upgrade costs and affordability
-   * @param team Team data with budget and facility levels
-   * @returns Upgrade costs and affordability for each facility
-   */
-  private calculateFacilityUpgrades(team: any): { 
-    upgradeCosts: { training: number; scout: number; stadium: number },
-    affordability: { training: boolean; scout: boolean; stadium: boolean }
-  } {
-    // Calculate upgrade costs
-    const trainingUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.training_facility_level, 'training');
-    const scoutUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.scout_level, 'scout');
-    const stadiumUpgradeCost = FacilityUpgradeCalculator.calculateUpgradeCost(team.stadium_size, 'stadium');
-    
-    // Check if the team can afford upgrades
-    const canAffordTraining = team.budget >= trainingUpgradeCost && trainingUpgradeCost > 0;
-    const canAffordScout = team.budget >= scoutUpgradeCost && scoutUpgradeCost > 0;
-    const canAffordStadium = team.budget >= stadiumUpgradeCost && stadiumUpgradeCost > 0;
-    
-    return {
-      upgradeCosts: {
-        training: trainingUpgradeCost,
-        scout: scoutUpgradeCost,
-        stadium: stadiumUpgradeCost
-      },
-      affordability: {
-        training: canAffordTraining,
-        scout: canAffordScout,
-        stadium: canAffordStadium
-      }
-    };
-  }
-  
-  /**
-   * Upgrade a team's facility (training or scouting)
+   * End the current season, handle promotions, and prepare for the next season
    * 
-   * @param teamId Team ID
-   * @param facilityType Type of facility to upgrade ('training', 'scout', or 'stadium')
-   * @param token JWT token
-   * @returns Response with updated team information
+   * @param gameId The game ID
+   * @param token JWT token for authentication
+   * @returns The end season result
    */
-  async upgradeFacility(teamId: string, facilityType: 'training' | 'scout' | 'stadium', token: string): Promise<UpgradeFacilityResponse> {
+  async endSeason(gameId: string, token: string): Promise<EndSeasonResponse> {
     try {
-      // Get the team with game stage information
-      const team = await teamRepository.getTeamWithGameInfo(teamId, token);
-      if (!team) {
-        throw new ApiError(404, 'Team not found');
+      // Get current game data
+      const game = await gameRepository.getGameById(gameId, token);
+      if (!game) {
+        throw new ApiError(404, 'Game not found');
       }
       
-      // Validate game stage is pre-season
-      this.validatePreSeasonStage(team);
+      const currentSeason = game.season;
       
-      // Determine which facility to upgrade and calculate cost
-      const { currentLevel, fieldName, facilityName } = this.getFacilityFieldInfo(team, facilityType);
+      // Validate all fixtures are completed
+      await this.validateAllFixturesCompleted(gameId, currentSeason, token);
       
-      // Check if the facility can be upgraded
-      const upgradeCheck = FacilityUpgradeCalculator.canUpgrade(currentLevel, team.budget, facilityType);
-      if (!upgradeCheck.canUpgrade) {
-        throw new ApiError(400, upgradeCheck.reason || 'Cannot upgrade facility');
+      // Get user's team
+      const userTeam = await teamRepository.getTeamByGameId(gameId, token);
+      if (!userTeam) {
+        throw new ApiError(404, 'User team not found');
       }
       
-      // Calculate the new budget and level
-      const newBudget = team.budget - upgradeCheck.cost!;
-      const newLevel = currentLevel + 1;
+      // Get current league standings
+      const leagueData = await leagueService.getLeague(gameId, token, currentSeason);
+      const leagueTable = leagueData.table;
       
-      // Update the team
-      const updatedTeam = await teamRepository.updateTeam(teamId, {
-        [fieldName]: newLevel,
-        budget: newBudget
+      // Get all fixtures for the season
+      const fixtures = await getSeasonFixtures(gameId, currentSeason, token);
+      
+      // Check promotion status
+      const { isPromoted, isChampion } = checkTeamPromotion(leagueTable, userTeam.id, fixtures);
+      
+      // If not promoted, end the game
+      if (!isPromoted) {
+        await gameRepository.updateGame(gameId, { status: 'completed' });
+        
+        return {
+          success: true,
+          message: 'Season ended. Your team did not finish in the top 2. Game over!',
+          game_ended: true,
+          season_completed: currentSeason,
+          promoted: false
+        };
+      }
+      
+      // If season 5 and promoted, they've won the game
+      if (currentSeason === 5) {
+        await gameRepository.updateGame(gameId, { status: 'completed' });
+        
+        return {
+          success: true,
+          message: 'Congratulations! You\'ve completed all 5 seasons and won the game!',
+          game_ended: true,
+          season_completed: currentSeason,
+          promoted: true,
+          champion: isChampion
+        };
+      }
+      
+      // Game continues - prepare for next season
+      const nextSeason = currentSeason + 1;
+      
+      // Get the other promoted team (the other team in top 2 that isn't the user's team)
+      const otherPromotedTeamEntry = this.findOtherPromotedTeam(leagueTable, userTeam.id);
+      
+      // Calculate financial updates
+      const financeUpdate = await this.updateFinancesForNewSeason(userTeam, token);
+    
+      // If other promoted team exists, add it to the next season
+      if (otherPromotedTeamEntry) {
+        await addTeamToNextSeason(gameId, nextSeason, otherPromotedTeamEntry.team_id);
+      }
+      
+      // Update game for next season
+      await gameRepository.updateGame(gameId, {
+        season: nextSeason,
+        match_day: 0,
+        game_stage: 'pre_season'
       });
       
-      return this.createUpgradeResponse(updatedTeam, facilityName, fieldName, newLevel, upgradeCheck.cost!);
+      // Map the finance update to match the expected format in the response
+      const budgetUpdate = {
+        previous: financeUpdate.previousBudget,
+        stadium_income: financeUpdate.stadiumIncome,
+        wages_paid: financeUpdate.wagesPaid,
+        new_budget: financeUpdate.newBudget
+      };
+      
+      return {
+        success: true,
+        message: `Season ${currentSeason} completed! Your team ${isChampion ? 'won the championship' : 'was promoted'} and advances to season ${nextSeason}.`,
+        game_ended: false,
+        season_completed: currentSeason,
+        next_season: nextSeason,
+        promoted: true,
+        champion: isChampion,
+        budget_update: budgetUpdate,
+        promoted_team: otherPromotedTeamEntry ? {
+          id: otherPromotedTeamEntry.team_id,
+          name: otherPromotedTeamEntry.team_name
+        } : undefined
+      };
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
       }
-      console.error('Error in upgradeFacility:', error);
-      throw new ApiError(500, 'Failed to upgrade facility');
+      console.error('Error in endSeason:', error);
+      throw new ApiError(500, 'Failed to end season');
     }
   }
   
   /**
-   * Validate the game is in pre-season stage
-   * @param team Team data with game information
+   * Validate that a game is in the correct state to start the season
+   * 
+   * @param gameId The game ID
+   * @param token JWT token
    */
-  private validatePreSeasonStage(team: any): void {
-    const gameData = team.games;
-    let isPreseason = false;
+  private async validateGameForSeasonStart(gameId: string, token: string): Promise<void> {
+    const currentGame = await gameRepository.getGameById(gameId, token);
     
-    if (Array.isArray(gameData)) {
-      isPreseason = gameData.length > 0 && gameData[0].game_stage === GAME_STAGE.PRE_SEASON;
-    } else {
-      isPreseason = gameData.game_stage === GAME_STAGE.PRE_SEASON;
+    if (!currentGame) {
+      throw new ApiError(404, 'Game not found');
     }
     
-    if (!isPreseason) {
-      throw new ApiError(400, 'Facility upgrades can only be done during the pre-season');
+    // Check if game is in pre-season
+    if (currentGame.game_stage !== GAME_STAGE.PRE_SEASON) {
+      throw new ApiError(400, 'Game is not in pre-season');
     }
   }
-  
+
   /**
-   * Get facility field information
-   * @param team Team data
-   * @param facilityType Type of facility
-   * @returns Current level, field name, and display name
+   * Generate opponent teams and fixtures for the league
+   * 
+   * @param gameId The game ID
+   * @param userTeamId The user's team ID
+   * @param token JWT token
    */
-  private getFacilityFieldInfo(
-    team: any, 
-    facilityType: 'training' | 'scout' | 'stadium'
-  ): { currentLevel: number; fieldName: string; facilityName: string } {
-    let currentLevel: number;
-    let fieldName: string;
-    let facilityName: string;
+  private async generateLeagueComponents(
+    gameId: string, 
+    userTeamId: string, 
+    token: string
+  ): Promise<{ 
+    opponentTeams: OpponentTeam[], 
+    fixtures: Fixture[] 
+  }> {
+    // Get the current game (needed for season info)
+    const currentGame = await gameRepository.getGameById(gameId, token);
     
-    if (facilityType === 'training') {
-      currentLevel = team.training_facility_level;
-      fieldName = 'training_facility_level';
-      facilityName = 'Training Facility';
-    } else if (facilityType === 'scout') {
-      currentLevel = team.scout_level;
-      fieldName = 'scout_level';
-      facilityName = 'Scouting Department';
-    } else {
-      currentLevel = team.stadium_size;
-      fieldName = 'stadium_size';
-      facilityName = 'Stadium';
+    if (!currentGame) {
+      throw new ApiError(404, 'Game not found');
     }
     
-    return { currentLevel, fieldName, facilityName };
+    // Generate opponent teams for the season
+    const opponentTeams = await leagueService.generateOpponentTeams(
+      gameId, 
+      currentGame.season, 
+      token
+    );
+    
+    // Generate fixtures for the season (including opponent fixtures)
+    const fixtures = await leagueService.generateFixtures(
+      gameId,
+      currentGame.season,
+      userTeamId,
+      opponentTeams,
+      token
+    );
+    
+    return { opponentTeams, fixtures };
   }
-  
   /**
-   * Create facility upgrade response
-   * @param updatedTeam Updated team data
-   * @param facilityName Display name of the facility
-   * @param fieldName Database field name
-   * @param newLevel New level after upgrade
-   * @param cost Cost of the upgrade
-   * @returns Formatted upgrade response
+   * Validate that all fixtures for a season are completed
+   * 
+   * @param gameId The game ID
+   * @param season The season number
+   * @param token JWT token
+   * @throws ApiError if any fixtures are not completed
    */
-  private createUpgradeResponse(
-    updatedTeam: any, 
-    facilityName: string, 
-    fieldName: string, 
-    newLevel: number, 
-    cost: number
-  ): UpgradeFacilityResponseModel {
-    return {
-      success: true,
-      message: `Successfully upgraded ${facilityName} to level ${newLevel}`,
-      team: {
-        id: updatedTeam.id,
-        name: updatedTeam.name,
-        budget: updatedTeam.budget,
-        [fieldName]: updatedTeam[fieldName]
-      },
-      cost: cost
-    };
+  private async validateAllFixturesCompleted(gameId: string, season: number, token: string): Promise<void> {
+    const incompleteFixtures = await getIncompleteFixtures(gameId, season, token);
+    
+    if (incompleteFixtures.length > 0) {
+      throw new ApiError(400, `Cannot end season. ${incompleteFixtures.length} fixtures are not completed.`);
+    }
+  }
+
+  /**
+   * Find the other team that is being promoted
+   * 
+   * @param leagueTable The league table
+   * @param userTeamId The user's team ID
+   * @returns The other promoted team entry
+   */
+  private findOtherPromotedTeam(leagueTable: any[], userTeamId: string) {
+    return leagueTable
+      .filter(entry => entry.team_id !== userTeamId && entry.team_type === 'opponent')
+      .find((_, index) => index < 2);
+  }
+
+  /**
+   * Update finances for the new season
+   * 
+   * @param userTeam The user's team
+   * @param token JWT token
+   * @returns Financial update information
+   */
+  private async updateFinancesForNewSeason(userTeam: any, token: string) {
+    // Calculate stadium income
+    const stadiumIncome = calculateStadiumIncome(userTeam.stadium_size);
+    
+    // Get player wages
+    const players = await getTeamPlayers(userTeam.game_id, token);
+      
+    // Calculate wages
+    const wagesPaid = players?.reduce((total, player) => {
+      return total + (player.tier * 2);
+    }, 0) || 0;
+    
+    // Update team finances
+    return await updateTeamFinances(userTeam.id, stadiumIncome, wagesPaid);
   }
 }
 

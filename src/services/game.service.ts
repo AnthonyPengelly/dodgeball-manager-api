@@ -1,8 +1,7 @@
 import { CurrentGameResponse, CreateTeamResponse, CancelGameResponseModel, StartMainSeasonResponse } from '../models/GameModels';
-import { Fixture, Game, OpponentTeam } from '../types';
+import { Game, OpponentTeam } from '../types';
 import { GAME_STATUS, GAME_STAGE } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
-import leagueService from './league.service';
 import * as gameRepository from '../repositories/gameRepository';
 import * as teamRepository from '../repositories/teamRepository';
 import { formatGameResponse } from '../utils/gameUtils';
@@ -124,111 +123,6 @@ class GameService {
       console.error('GameService.cancelGame error:', error);
       throw error;
     }
-  }
-
-  /**
-   * Start the main season for a game
-   * 
-   * @param gameId The game ID
-   * @param token JWT token for authentication
-   * @returns The updated game
-   */
-  async startMainSeason(gameId: string, token: string): Promise<StartMainSeasonResponse> {
-    try {
-      // Validate game state
-      await this.validateGameForSeasonStart(gameId, token);
-      
-      // Get the user's team
-      const userTeam = await teamRepository.getTeamByGameId(gameId, token);
-      
-      if (!userTeam) {
-        throw new ApiError(404, 'Team not found');
-      }
-      
-      // Generate league components
-      await this.generateLeagueComponents(
-        gameId, 
-        userTeam.id, 
-        token
-      );
-
-      const league = await leagueService.getLeague(gameId, token);
-      
-      // Update the game stage to regular season
-      const updatedGame = await gameRepository.updateGameStage(gameId, GAME_STAGE.REGULAR_SEASON);
-      
-      return {
-        game: updatedGame,
-        fixtures: league.fixtures,
-        table: league.table
-      };
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      console.error('Error in startMainSeason:', error);
-      throw new ApiError(500, 'Failed to start main season');
-    }
-  }
-  
-  /**
-   * Validate that a game is in the correct state to start the season
-   * 
-   * @param gameId The game ID
-   * @param token JWT token
-   */
-  private async validateGameForSeasonStart(gameId: string, token: string): Promise<void> {
-    const currentGame = await gameRepository.getGameById(gameId, token);
-    
-    if (!currentGame) {
-      throw new ApiError(404, 'Game not found');
-    }
-    
-    // Check if game is in pre-season
-    if (currentGame.game_stage !== GAME_STAGE.PRE_SEASON) {
-      throw new ApiError(400, 'Game is not in pre-season');
-    }
-  }
-  
-  /**
-   * Generate opponent teams and fixtures for the league
-   * 
-   * @param gameId The game ID
-   * @param userTeamId The user's team ID
-   * @param token JWT token
-   */
-  private async generateLeagueComponents(
-    gameId: string, 
-    userTeamId: string, 
-    token: string
-  ): Promise<{ 
-    opponentTeams: OpponentTeam[], 
-    fixtures: Fixture[] 
-  }> {
-    // Get the current game (needed for season info)
-    const currentGame = await gameRepository.getGameById(gameId, token);
-    
-    if (!currentGame) {
-      throw new ApiError(404, 'Game not found');
-    }
-    
-    // Generate opponent teams for the season
-    const opponentTeams = await leagueService.generateOpponentTeams(
-      gameId, 
-      currentGame.season, 
-      token
-    );
-    
-    // Generate fixtures for the season (including opponent fixtures)
-    const fixtures = await leagueService.generateFixtures(
-      gameId,
-      currentGame.season,
-      userTeamId,
-      opponentTeams,
-      token
-    );
-    
-    return { opponentTeams, fixtures };
   }
 }
 

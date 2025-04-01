@@ -1,4 +1,4 @@
-import { MatchSimulation } from "../match-engine/types";
+import { Game, GameState, MatchSimulation, MatchState, Round, Turn } from "../match-engine/types";
 import { EnhancedFixture } from "../types";
 
 /** Response model for playing a match */
@@ -19,5 +19,23 @@ export interface PlayMatchResponse {
   other_match?: EnhancedFixture;
 
   /** Optional detailed simulation data from the match engine */
-  simulated_match?: MatchSimulation;
+  simulated_match?: MatchSimulationResponse;
+}
+
+// Tsoa doesn't like our complex DeepPartial mode, so replace it with Partial model for the API response
+export interface MatchSimulationResponse extends MatchSimulation {
+  game: TsoaGame;
+}
+
+export interface TsoaGame extends Game {
+  rounds: TsoaRound[];
+  endGameMatchStateUpdate: Partial<MatchState>;
+}
+
+export interface TsoaRound extends Round {
+  turns: TsoaTurn[];
+}
+
+export interface TsoaTurn extends Turn {
+  endTurnGameStateUpdate: Partial<GameState>;
 }

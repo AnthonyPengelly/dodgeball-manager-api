@@ -2,9 +2,11 @@
  * Utility type that makes all properties and nested properties optional
  * This is useful for state updates where you only want to specify the properties that changed
  */
-export type DeepPartial<T> = T extends object ? {
-  [P in keyof T]?: DeepPartial<T[P]>;
-} : T;
+export type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends object 
+    ? DeepPartial<T[K]> 
+    : T[K];
+};
 
 /**
  * Deep merges source objects into target object

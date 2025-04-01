@@ -1,7 +1,9 @@
 import { 
-  Player,ScoutedPlayer, PlayerStatus
+  Player,ScoutedPlayer, PlayerStatus,
+  Season,
+  SeasonScoutingInfo
 } from '../types';
-import { PurchaseScoutedPlayerRequestModel, PurchaseScoutedPlayerResponse, ScoutPlayersRequestModel } from '../models/SeasonModels'
+import { PurchaseScoutedPlayerRequestModel, PurchaseScoutedPlayerResponse, ScoutPlayersRequestModel } from '../models/ScoutingModels'
 import { GAME_STAGE, PLAYER_STATUS, SCOUTING_CONSTANTS } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import { PlayerGenerator } from '../utils/player-generator';
@@ -11,6 +13,7 @@ import * as teamRepository from '../repositories/teamRepository';
 import * as gameRepository from '../repositories/gameRepository';
 import * as playerRepository from '../repositories/playerRepository';
 import * as scoutRepository from '../repositories/scoutRepository';
+import * as seasonRepository from '../repositories/seasonRepository';
 
 class ScoutService {
   /**
@@ -41,7 +44,7 @@ class ScoutService {
       
       // Get the current season and calculate scouting credits
       const currentSeason = await seasonService.getCurrentSeason(teamId, token);
-      const scoutingInfo = seasonService.calculateScoutingCredits(currentSeason, team.scout_level);
+      const scoutingInfo = this.calculateScoutingCredits(currentSeason, team.scout_level);
       
       // Determine how many credits to use and validate
       const creditsToUse = this.validateAndCalculateCreditsToUse(scoutData, scoutingInfo);
@@ -55,10 +58,10 @@ class ScoutService {
       );
       
       // Update the scouting credits used
-      const updatedSeason = await seasonService.updateScoutingCreditsUsed(currentSeason.id, creditsToUse);
+      const updatedSeason = await this.updateScoutingCreditsUsed(currentSeason.id, creditsToUse);
       
       // Calculate updated scouting info
-      const updatedScoutingInfo = seasonService.calculateScoutingCredits(updatedSeason, team.scout_level);
+      const updatedScoutingInfo = this.calculateScoutingCredits(updatedSeason, team.scout_level);
       
       return scoutedPlayers;
     } catch (error) {
@@ -141,6 +144,79 @@ class ScoutService {
     }
   }
   
+  /**
+   * Get scouting information for the current season
+   * @param teamId The team ID
+   * @param token The JWT token of the authenticated user
+   * @returns The season's scouting information
+   */
+  async getSeasonScoutingInfo(teamId: string, token: string): Promise<SeasonScoutingInfo> {
+    try {
+      // Get the current season
+      const currentSeason = await seasonService.getCurrentSeason(teamId, token);
+      
+      // Get the team's scout level
+      const team = await teamRepository.getTeamById(teamId, token);
+      if (!team) {
+        throw new ApiError(404, 'Team not found');
+      }
+      
+      // Calculate and return scouting credits info
+      const scoutingInfo = this.calculateScoutingCredits(currentSeason, team.scout_level);
+      return scoutingInfo;
+    } catch (error) {
+      console.error('SeasonService.getSeasonScoutingInfo error:', error);
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(500, 'Failed to get season scouting info');
+    }
+  }
+
+  /**
+   * Update the scouting credits used for a season
+   * @param seasonId The season ID
+   * @param creditsUsed The number of credits to add to the used count
+   * @returns The updated season data
+   */
+  async updateScoutingCreditsUsed(seasonId: string, creditsUsed: number = 1): Promise<Season> {
+    try {
+      return await seasonRepository.updateScoutingCreditsUsed(seasonId, creditsUsed);
+    } catch (error) {
+      console.error('SeasonService.updateScoutingCreditsUsed error:', error);
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(500, 'Failed to update scouting credits');
+    }
+  }
+
+  /**
+   * Calculate scouting credits for a season
+   * @param season The season to calculate credits for
+   * @param scoutLevel The team's scout level
+   * @returns The season's scouting information
+   */
+  calculateScoutingCredits(season: Season, scoutLevel: number): SeasonScoutingInfo {
+    // Get the total credits available based on scout level
+    const level = Math.min(Math.max(scoutLevel, 1), 5);
+    const creditsAvailable = SCOUTING_CONSTANTS.CREDITS_BY_LEVEL[level as 1 | 2 | 3 | 4 | 5];
+    
+    // Calculate remaining credits
+    const creditsUsed = season.scouting_credits_used || 0;
+    const creditsRemaining = Math.max(0, creditsAvailable - creditsUsed);
+    
+    return {
+      id: season.id,
+      season_number: season.season_number,
+      team_id: season.team_id,
+      scout_level: scoutLevel,
+      scouting_credits_used: creditsUsed,
+      scouting_credits_available: creditsAvailable,
+      scouting_credits_remaining: creditsRemaining
+    };
+  }
+
   /**
    * Validate and calculate how many scouting credits to use
    * @param scoutData The scout players request data
