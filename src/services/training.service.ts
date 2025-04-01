@@ -1,7 +1,8 @@
 import { 
-  Player, TrainPlayerRequest, TrainPlayerResponse,
+  Player,
   PlayerStatName
 } from '../types';
+import { TrainPlayerRequestModel } from '../models/PlayerModels';
 import { GAME_STAGE, PLAYER_STATUS, TRAINING_CONSTANTS, PLAYER_STATS } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import { TierCalculator } from '../utils/tier-calculator';
@@ -9,6 +10,7 @@ import seasonService from './season.service';
 import * as teamRepository from '../repositories/teamRepository';
 import * as gameRepository from '../repositories/gameRepository';
 import * as playerRepository from '../repositories/playerRepository';
+import { TrainPlayerResponseModel } from '../models/SeasonModels';
 
 class TrainingService {
   /**
@@ -18,7 +20,7 @@ class TrainingService {
    * @param token The JWT token of the authenticated user
    * @returns The updated player and training info
    */
-  async trainPlayer(teamId: string, trainingData: TrainPlayerRequest, token: string): Promise<TrainPlayerResponse> {
+  async trainPlayer(teamId: string, trainingData: TrainPlayerRequestModel, token: string): Promise<TrainPlayerResponseModel> {
     try {
       // Validate the stat name
       if (!PLAYER_STATS.includes(trainingData.stat_name)) {

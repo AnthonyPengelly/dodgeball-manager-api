@@ -7,6 +7,60 @@
 		"requestBodies": {},
 		"responses": {},
 		"schemas": {
+			"GetSeasonTrainingInfoResponseModel": {
+				"description": "Get season training info response model for tsoa documentation",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"season_number": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_id": {
+						"type": "string"
+					},
+					"training_facility_level": {
+						"type": "number",
+						"format": "double"
+					},
+					"training_credits_used": {
+						"type": "number",
+						"format": "double"
+					},
+					"training_credits_available": {
+						"type": "number",
+						"format": "double"
+					},
+					"training_credits_remaining": {
+						"type": "number",
+						"format": "double"
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Season training info retrieved successfully"
+					}
+				},
+				"required": [
+					"id",
+					"season_number",
+					"team_id",
+					"training_facility_level",
+					"training_credits_used",
+					"training_credits_available",
+					"training_credits_remaining",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"PlayerStatus": {
 				"type": "string",
 				"enum": [
@@ -137,6 +191,498 @@
 					"potential_tier",
 					"created_at",
 					"updated_at"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SeasonTrainingInfo": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"season_number": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_id": {
+						"type": "string"
+					},
+					"training_facility_level": {
+						"type": "number",
+						"format": "double"
+					},
+					"training_credits_used": {
+						"type": "number",
+						"format": "double"
+					},
+					"training_credits_available": {
+						"type": "number",
+						"format": "double"
+					},
+					"training_credits_remaining": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"season_number",
+					"team_id",
+					"training_facility_level",
+					"training_credits_used",
+					"training_credits_available",
+					"training_credits_remaining"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TrainPlayerResponseModel": {
+				"description": "Train player response model",
+				"properties": {
+					"player": {
+						"$ref": "#/components/schemas/Player",
+						"description": "Updated player data"
+					},
+					"season": {
+						"$ref": "#/components/schemas/SeasonTrainingInfo",
+						"description": "Season training information"
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Player trained successfully"
+					}
+				},
+				"required": [
+					"player",
+					"season",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PlayerStatName": {
+				"type": "string",
+				"enum": [
+					"throwing",
+					"catching",
+					"dodging",
+					"blocking",
+					"speed",
+					"positional_sense",
+					"teamwork",
+					"clutch_factor"
+				]
+			},
+			"TrainPlayerRequestModel": {
+				"description": "Train player request model",
+				"properties": {
+					"player_id": {
+						"type": "string",
+						"description": "Player ID to train",
+						"example": "550e8400-e29b-41d4-a716-446655440000"
+					},
+					"stat_name": {
+						"$ref": "#/components/schemas/PlayerStatName",
+						"description": "Stat name to train",
+						"example": "throwing"
+					}
+				},
+				"required": [
+					"player_id",
+					"stat_name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GetSeasonScoutingInfoResponseModel": {
+				"description": "Get season scouting info response model for tsoa documentation",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"season_number": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_id": {
+						"type": "string"
+					},
+					"scout_level": {
+						"type": "number",
+						"format": "double"
+					},
+					"scouting_credits_used": {
+						"type": "number",
+						"format": "double"
+					},
+					"scouting_credits_available": {
+						"type": "number",
+						"format": "double"
+					},
+					"scouting_credits_remaining": {
+						"type": "number",
+						"format": "double"
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Season scouting info retrieved successfully"
+					}
+				},
+				"required": [
+					"id",
+					"season_number",
+					"team_id",
+					"scout_level",
+					"scouting_credits_used",
+					"scouting_credits_available",
+					"scouting_credits_remaining",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ScoutedPlayer": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"player_id": {
+						"type": "string"
+					},
+					"season_id": {
+						"type": "string"
+					},
+					"is_purchased": {
+						"type": "boolean"
+					},
+					"scout_price": {
+						"type": "number",
+						"format": "double"
+					},
+					"buy_price": {
+						"type": "number",
+						"format": "double"
+					},
+					"created_at": {
+						"type": "string"
+					},
+					"updated_at": {
+						"type": "string"
+					},
+					"player": {
+						"$ref": "#/components/schemas/Player"
+					}
+				},
+				"required": [
+					"id",
+					"player_id",
+					"season_id",
+					"is_purchased",
+					"scout_price",
+					"buy_price",
+					"created_at",
+					"updated_at"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GetScoutedPlayersResponseModel": {
+				"description": "Get scouted players response model",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Scouted players retrieved successfully"
+					},
+					"scouted_players": {
+						"items": {
+							"$ref": "#/components/schemas/ScoutedPlayer"
+						},
+						"type": "array",
+						"description": "List of scouted players"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"scouted_players"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ScoutPlayersResponseModel": {
+				"description": "Scout players response model",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Scouted players generated successfully"
+					},
+					"scouted_players": {
+						"items": {
+							"$ref": "#/components/schemas/ScoutedPlayer"
+						},
+						"type": "array",
+						"description": "List of newly scouted players"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"scouted_players"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ScoutPlayersRequestModel": {
+				"description": "Scout players request model",
+				"properties": {
+					"count": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of players to scout",
+						"example": 3
+					}
+				},
+				"required": [
+					"count"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PurchaseScoutedPlayerResponseModel": {
+				"description": "Purchase scouted player response model",
+				"properties": {
+					"result": {
+						"properties": {
+							"team_budget": {
+								"type": "number",
+								"format": "double",
+								"description": "Updated team budget",
+								"example": 500
+							},
+							"player": {
+								"$ref": "#/components/schemas/Player",
+								"description": "Purchased player details"
+							}
+						},
+						"required": [
+							"team_budget",
+							"player"
+						],
+						"type": "object",
+						"description": "Result of the purchase operation"
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Scouted player purchased successfully"
+					}
+				},
+				"required": [
+					"result",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PurchaseScoutedPlayerRequestModel": {
+				"description": "Purchase scouted player request model",
+				"properties": {
+					"scouted_player_id": {
+						"type": "string",
+						"description": "ID of the scouted player to purchase",
+						"example": "550e8400-e29b-41d4-a716-446655440000"
+					}
+				},
+				"required": [
+					"scouted_player_id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GetFacilityInfoResponseModel": {
+				"description": "Get facility info response model for tsoa documentation",
+				"properties": {
+					"training_facility_level": {
+						"type": "number",
+						"format": "double"
+					},
+					"scout_level": {
+						"type": "number",
+						"format": "double"
+					},
+					"stadium_size": {
+						"type": "number",
+						"format": "double"
+					},
+					"training_facility_upgrade_cost": {
+						"type": "number",
+						"format": "double"
+					},
+					"scout_upgrade_cost": {
+						"type": "number",
+						"format": "double"
+					},
+					"stadium_upgrade_cost": {
+						"type": "number",
+						"format": "double"
+					},
+					"can_afford_training_upgrade": {
+						"type": "boolean"
+					},
+					"can_afford_scout_upgrade": {
+						"type": "boolean"
+					},
+					"can_afford_stadium_upgrade": {
+						"type": "boolean"
+					},
+					"budget": {
+						"type": "number",
+						"format": "double"
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Facility info retrieved successfully"
+					}
+				},
+				"required": [
+					"training_facility_level",
+					"scout_level",
+					"stadium_size",
+					"training_facility_upgrade_cost",
+					"scout_upgrade_cost",
+					"stadium_upgrade_cost",
+					"can_afford_training_upgrade",
+					"can_afford_scout_upgrade",
+					"can_afford_stadium_upgrade",
+					"budget",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpgradeFacilityResponseModel": {
+				"description": "Upgrade facility response model",
+				"properties": {
+					"team": {
+						"properties": {
+							"scout_level": {
+								"type": "number",
+								"format": "double",
+								"description": "Scout level (optional)",
+								"example": 2
+							},
+							"training_facility_level": {
+								"type": "number",
+								"format": "double",
+								"description": "Training facility level (optional)",
+								"example": 2
+							},
+							"budget": {
+								"type": "number",
+								"format": "double",
+								"description": "Team budget",
+								"example": 1000
+							},
+							"name": {
+								"type": "string",
+								"description": "Team name",
+								"example": "Dodgeball Dynamos"
+							},
+							"id": {
+								"type": "string",
+								"description": "Team ID",
+								"example": "550e8400-e29b-41d4-a716-446655440000"
+							}
+						},
+						"required": [
+							"budget",
+							"name",
+							"id"
+						],
+						"type": "object",
+						"description": "Updated team information"
+					},
+					"cost": {
+						"type": "number",
+						"format": "double",
+						"description": "Upgrade cost",
+						"example": 500
+					},
+					"success": {
+						"type": "boolean",
+						"description": "Success status",
+						"example": true
+					},
+					"message": {
+						"type": "string",
+						"description": "Response message",
+						"example": "Facility upgraded successfully"
+					}
+				},
+				"required": [
+					"team",
+					"cost",
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpgradeFacilityRequestModel": {
+				"description": "Upgrade facility request model",
+				"properties": {
+					"facility_type": {
+						"type": "string",
+						"enum": [
+							"training",
+							"scout",
+							"stadium"
+						],
+						"description": "Type of facility to upgrade",
+						"example": "training"
+					}
+				},
+				"required": [
+					"facility_type"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -749,6 +1295,270 @@
 		"contact": {}
 	},
 	"paths": {
+		"/seasons/training-info": {
+			"get": {
+				"operationId": "GetSeasonTrainingInfo",
+				"responses": {
+					"200": {
+						"description": "Season training info retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GetSeasonTrainingInfoResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get training information for the current season",
+				"tags": [
+					"Seasons"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/seasons/train-player": {
+			"post": {
+				"operationId": "TrainPlayer",
+				"responses": {
+					"200": {
+						"description": "Player trained successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TrainPlayerResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Train a player by improving one of their stats",
+				"tags": [
+					"Seasons"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"description": "Details of the player to train",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/TrainPlayerRequestModel",
+								"description": "Details of the player to train"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/seasons/scouting-info": {
+			"get": {
+				"operationId": "GetSeasonScoutingInfo",
+				"responses": {
+					"200": {
+						"description": "Season scouting info retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GetSeasonScoutingInfoResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get scouting information for the current season",
+				"tags": [
+					"Seasons"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/seasons/scouted-players": {
+			"get": {
+				"operationId": "GetScoutedPlayers",
+				"responses": {
+					"200": {
+						"description": "Scouted players retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GetScoutedPlayersResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get all scouted players for the current season",
+				"tags": [
+					"Seasons"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/seasons/scout-players": {
+			"post": {
+				"operationId": "ScoutPlayers",
+				"responses": {
+					"200": {
+						"description": "Scouted players generated successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ScoutPlayersResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Generate scouted players for the current season",
+				"tags": [
+					"Seasons"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"description": "Details of the scouted players to generate",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ScoutPlayersRequestModel",
+								"description": "Details of the scouted players to generate"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/seasons/purchase-scouted-player": {
+			"post": {
+				"operationId": "PurchaseScoutedPlayer",
+				"responses": {
+					"200": {
+						"description": "Scouted player purchased successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PurchaseScoutedPlayerResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Purchase a scouted player for the team",
+				"tags": [
+					"Seasons"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"description": "Details of the scouted player to purchase",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PurchaseScoutedPlayerRequestModel",
+								"description": "Details of the scouted player to purchase"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/seasons/facility-info": {
+			"get": {
+				"operationId": "GetFacilityInfo",
+				"responses": {
+					"200": {
+						"description": "Facility info retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GetFacilityInfoResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get facility information",
+				"tags": [
+					"Seasons"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/seasons/upgrade-facility": {
+			"post": {
+				"operationId": "UpgradeFacility",
+				"responses": {
+					"200": {
+						"description": "Facility upgraded successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UpgradeFacilityResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"description": "Upgrade a facility",
+				"tags": [
+					"Seasons"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"description": "Details of the facility to upgrade",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpgradeFacilityRequestModel",
+								"description": "Details of the facility to upgrade"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/players/draft": {
 			"get": {
 				"operationId": "GetDraftPlayers",

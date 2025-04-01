@@ -1,10 +1,11 @@
-import { Season, SeasonTrainingInfo, GetSeasonTrainingInfoResponse, SeasonScoutingInfo, GetSeasonScoutingInfoResponse, GetFacilityInfoResponse, UpgradeFacilityResponse, ScoutedPlayer } from '../types';
+import { Season, SeasonTrainingInfo, SeasonScoutingInfo, ScoutedPlayer, FacilityInfo } from '../types';
 import { TRAINING_CONSTANTS, SCOUTING_CONSTANTS, GAME_STAGE } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import { FacilityUpgradeCalculator } from '../utils/facility-upgrade-calculator';
 import * as seasonRepository from '../repositories/seasonRepository';
 import * as teamRepository from '../repositories/teamRepository';
 import * as scoutRepository from '../repositories/scoutRepository';
+import { UpgradeFacilityResponse, UpgradeFacilityResponseModel } from '../models/SeasonModels';
 
 class SeasonService {
   /**
@@ -83,7 +84,7 @@ class SeasonService {
    * @param token The JWT token of the authenticated user
    * @returns The season's training information
    */
-  async getSeasonTrainingInfo(teamId: string, token: string): Promise<GetSeasonTrainingInfoResponse> {
+  async getSeasonTrainingInfo(teamId: string, token: string): Promise<SeasonTrainingInfo> {
     try {
       // Get the current season
       const currentSeason = await this.getCurrentSeason(teamId, token);
@@ -96,7 +97,7 @@ class SeasonService {
       
       // Calculate and return training credits info
       const trainingInfo = this.calculateTrainingCredits(currentSeason, team.training_facility_level);
-      return { season: trainingInfo };
+      return trainingInfo;
     } catch (error) {
       console.error('SeasonService.getSeasonTrainingInfo error:', error);
       if (error instanceof ApiError) {
@@ -112,7 +113,7 @@ class SeasonService {
    * @param token The JWT token of the authenticated user
    * @returns The season's scouting information
    */
-  async getSeasonScoutingInfo(teamId: string, token: string): Promise<GetSeasonScoutingInfoResponse> {
+  async getSeasonScoutingInfo(teamId: string, token: string): Promise<SeasonScoutingInfo> {
     try {
       // Get the current season
       const currentSeason = await this.getCurrentSeason(teamId, token);
@@ -125,7 +126,7 @@ class SeasonService {
       
       // Calculate and return scouting credits info
       const scoutingInfo = this.calculateScoutingCredits(currentSeason, team.scout_level);
-      return { season: scoutingInfo };
+      return scoutingInfo;
     } catch (error) {
       console.error('SeasonService.getSeasonScoutingInfo error:', error);
       if (error instanceof ApiError) {
@@ -252,7 +253,7 @@ class SeasonService {
    * @param token JWT token
    * @returns Facility information including current levels and upgrade costs
    */
-  async getFacilityInfo(teamId: string, token: string): Promise<GetFacilityInfoResponse> {
+  async getFacilityInfo(teamId: string, token: string): Promise<FacilityInfo> {
     try {
       // Get the team information
       const team = await teamRepository.getTeamById(teamId, token);
@@ -264,18 +265,17 @@ class SeasonService {
       const { upgradeCosts, affordability } = this.calculateFacilityUpgrades(team);
       
       return {
-        facility: {
-          training_facility_level: team.training_facility_level,
-          scout_level: team.scout_level,
-          stadium_size: team.stadium_size,
-          training_facility_upgrade_cost: upgradeCosts.training,
-          scout_upgrade_cost: upgradeCosts.scout,
-          stadium_upgrade_cost: upgradeCosts.stadium,
-          can_afford_training_upgrade: affordability.training,
-          can_afford_scout_upgrade: affordability.scout,
-          can_afford_stadium_upgrade: affordability.stadium,
-          budget: team.budget
-        }
+        training_facility_level: team.training_facility_level,
+        scout_level: team.scout_level,
+        stadium_size: team.stadium_size,
+        training_facility_upgrade_cost: upgradeCosts.training,
+        scout_upgrade_cost: upgradeCosts.scout,
+        stadium_upgrade_cost: upgradeCosts.stadium,
+        can_afford_training_upgrade: affordability.training,
+        can_afford_scout_upgrade: affordability.scout,
+        can_afford_stadium_upgrade: affordability.stadium,
+        budget: team.budget
+        
       };
     } catch (error) {
       if (error instanceof ApiError) {
@@ -432,7 +432,7 @@ class SeasonService {
     fieldName: string, 
     newLevel: number, 
     cost: number
-  ): UpgradeFacilityResponse {
+  ): UpgradeFacilityResponseModel {
     return {
       success: true,
       message: `Successfully upgraded ${facilityName} to level ${newLevel}`,

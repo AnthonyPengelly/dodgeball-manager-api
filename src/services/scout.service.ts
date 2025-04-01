@@ -1,7 +1,7 @@
 import { 
-  Player, ScoutPlayersRequest, ScoutPlayersResponse, PurchaseScoutedPlayerRequest, 
-  PurchaseScoutedPlayerResponse, ScoutedPlayer, GetScoutedPlayersResponse, PlayerStatus
+  Player,ScoutedPlayer, PlayerStatus
 } from '../types';
+import { PurchaseScoutedPlayerRequestModel, PurchaseScoutedPlayerResponse, ScoutPlayersRequestModel } from '../models/SeasonModels'
 import { GAME_STAGE, PLAYER_STATUS, SCOUTING_CONSTANTS } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import { PlayerGenerator } from '../utils/player-generator';
@@ -20,7 +20,7 @@ class ScoutService {
    * @param token The JWT token of the authenticated user
    * @returns The scouted players and updated season scouting info
    */
-  async scoutPlayers(teamId: string, scoutData: ScoutPlayersRequest, token: string): Promise<ScoutPlayersResponse> {
+  async scoutPlayers(teamId: string, scoutData: ScoutPlayersRequestModel, token: string): Promise<ScoutedPlayer[]> {
     try {
       // Get the team data
       const team = await teamRepository.getTeamById(teamId, token);
@@ -60,13 +60,7 @@ class ScoutService {
       // Calculate updated scouting info
       const updatedScoutingInfo = seasonService.calculateScoutingCredits(updatedSeason, team.scout_level);
       
-      return {
-        success: true,
-        message: `Successfully scouted ${insertedPlayers.length} players using ${creditsToUse} scouting credits`,
-        players: insertedPlayers,
-        scouted_players: scoutedPlayers,
-        season: updatedScoutingInfo
-      };
+      return scoutedPlayers;
     } catch (error) {
       console.error('ScoutService.scoutPlayers error:', error);
       if (error instanceof ApiError) {
@@ -82,7 +76,7 @@ class ScoutService {
    * @param token The JWT token of the authenticated user
    * @returns The scouted players
    */
-  async getScoutedPlayers(teamId: string, token: string): Promise<GetScoutedPlayersResponse> {
+  async getScoutedPlayers(teamId: string, token: string): Promise<ScoutedPlayer[]> {
     try {
       // Get the current season for the team
       const currentSeason = await seasonService.getCurrentSeason(teamId, token);
@@ -90,9 +84,7 @@ class ScoutService {
       // Get scouted players for this season using repository
       const scoutedPlayers = await scoutRepository.getScoutedPlayersForSeason(currentSeason.id, token);
       
-      return {
-        scouted_players: scoutedPlayers
-      };
+      return scoutedPlayers;
     } catch (error) {
       console.error('ScoutService.getScoutedPlayers error:', error);
       if (error instanceof ApiError) {
@@ -109,7 +101,7 @@ class ScoutService {
    * @param token The JWT token of the authenticated user
    * @returns The purchased player and updated team budget
    */
-  async purchaseScoutedPlayer(teamId: string, purchaseData: PurchaseScoutedPlayerRequest, token: string): Promise<PurchaseScoutedPlayerResponse> {
+  async purchaseScoutedPlayer(teamId: string, purchaseData: PurchaseScoutedPlayerRequestModel, token: string): Promise<PurchaseScoutedPlayerResponse> {
     try {
       // Get and validate the scouted player
       const scoutedPlayer = await scoutRepository.getAndValidateScoutedPlayer(purchaseData.scouted_player_id, teamId, token);
@@ -135,13 +127,9 @@ class ScoutService {
       
       // Return the response with updated data
       return {
-        success: true,
-        message: `Successfully purchased player ${updatedPlayer.name} for ${scoutedPlayer.scout_price}`,
-        player: updatedPlayer,
-        team: {
-          id: team.id,
-          name: team.name,
-          budget: newBudget
+        result: {
+          player: updatedPlayer,
+          team_budget: newBudget
         }
       };
     } catch (error) {
@@ -160,7 +148,7 @@ class ScoutService {
    * @returns The number of credits to use
    */
   private validateAndCalculateCreditsToUse(
-    scoutData: ScoutPlayersRequest,
+    scoutData: ScoutPlayersRequestModel,
     scoutingInfo: { scouting_credits_remaining: number }
   ): number {
     // Determine how many credits to use (default to 1)

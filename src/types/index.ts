@@ -102,6 +102,7 @@ export interface PlayerPotentialStats {
   clutch_factor_potential: number;
 }
 
+
 export interface Season {
   id: string;
   game_id: string;
@@ -126,19 +127,6 @@ export interface ScoutedPlayer {
   player?: Player; // Included when joined with players table
 }
 
-// Training related types
-export interface TrainPlayerRequest {
-  player_id: string;
-  stat_name: PlayerStatName;
-}
-
-export interface TrainPlayerResponse {
-  success: boolean;
-  message: string;
-  player: Player;
-  season: SeasonTrainingInfo;
-}
-
 export interface SeasonTrainingInfo {
   id: string;
   season_number: number;
@@ -149,38 +137,6 @@ export interface SeasonTrainingInfo {
   training_credits_remaining: number;
 }
 
-export interface GetSeasonTrainingInfoResponse {
-  season: SeasonTrainingInfo;
-}
-
-// Scouting related types
-export interface ScoutPlayersRequest {
-  count?: number; // Optional: Number of scouting credits to use, defaults to 1
-}
-
-export interface ScoutPlayersResponse {
-  success: boolean;
-  message: string;
-  players: Player[];
-  scouted_players: ScoutedPlayer[];
-  season: SeasonScoutingInfo;
-}
-
-export interface PurchaseScoutedPlayerRequest {
-  scouted_player_id: string;
-}
-
-export interface PurchaseScoutedPlayerResponse {
-  success: boolean;
-  message: string;
-  player: Player;
-  team: {
-    id: string;
-    name: string;
-    budget: number;
-  };
-}
-
 export interface SeasonScoutingInfo {
   id: string;
   season_number: number;
@@ -189,14 +145,6 @@ export interface SeasonScoutingInfo {
   scouting_credits_used: number;
   scouting_credits_available: number;
   scouting_credits_remaining: number;
-}
-
-export interface GetSeasonScoutingInfoResponse {
-  season: SeasonScoutingInfo;
-}
-
-export interface GetScoutedPlayersResponse {
-  scouted_players: ScoutedPlayer[];
 }
 
 export type PlayerStatName = 
@@ -221,27 +169,6 @@ export interface FacilityInfo {
   can_afford_scout_upgrade: boolean;
   can_afford_stadium_upgrade: boolean;
   budget: number;
-}
-
-export interface GetFacilityInfoResponse {
-  facility: FacilityInfo;
-}
-
-export interface UpgradeFacilityRequest {
-  facility_type: 'training' | 'scout' | 'stadium';
-}
-
-export interface UpgradeFacilityResponse {
-  success: boolean;
-  message: string;
-  team: {
-    id: string;
-    name: string;
-    budget: number;
-    training_facility_level?: number;
-    scout_level?: number;
-  };
-  cost: number;
 }
 
 // Transfer list types

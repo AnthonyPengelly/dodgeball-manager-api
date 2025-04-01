@@ -1,26 +1,53 @@
-import { Request, Response } from 'express';
-import seasonService from '../services/season.service';
+import { 
+  Controller, 
+  Route, 
+  Tags, 
+  Get, 
+  Post, 
+  Body, 
+  Request, 
+  Security, 
+  SuccessResponse 
+} from 'tsoa';
 import gameService from '../services/game.service';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ApiError } from '../middleware/error.middleware';
-import { PlayerStatName } from '../types';
+import seasonService from '../services/season.service';
 import trainingService from '../services/training.service';
 import scoutService from '../services/scout.service';
+import { ApiError } from '../middleware/error.middleware';
+import { 
+  GetSeasonTrainingInfoResponseModel, 
+  TrainPlayerRequestModel, 
+  TrainPlayerResponseModel,
+  GetSeasonScoutingInfoResponseModel,
+  GetFacilityInfoResponseModel,
+  UpgradeFacilityRequestModel,
+  UpgradeFacilityResponseModel,
+  GetScoutedPlayersResponseModel,
+  ScoutPlayersRequestModel,
+  ScoutPlayersResponseModel,
+  PurchaseScoutedPlayerRequestModel,
+  PurchaseScoutedPlayerResponseModel
+} from '../models/SeasonModels';
 
-class SeasonController {
+@Route('seasons')
+@Tags('Seasons')
+export class SeasonController extends Controller {
   /**
    * Get training information for the current season
-   * @route GET /api/seasons/training-info
-   * @access Private
+   * @param request Express request with authenticated user
    */
-  getSeasonTrainingInfo = asyncHandler(async (req: Request, res: Response) => {
-    // Get user ID from the request (set by the auth middleware)
-    const userId = req.user?.id;
-    const token = req.headers.authorization?.split(' ')[1] || '';
-    
-    if (!userId) {
+  @Get('training-info')
+  @Security('bearerAuth')
+  @SuccessResponse('200', 'Season training info retrieved successfully')
+  public async getSeasonTrainingInfo(
+    @Request() request: any
+  ): Promise<GetSeasonTrainingInfoResponseModel> {
+    if (!request || !request.user || !request.user.id) {
       throw new ApiError(401, 'Unauthorized');
     }
+    
+    const userId = request.user.id;
+    const token = request.headers.authorization?.split(' ')[1] || '';
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
@@ -31,20 +58,31 @@ class SeasonController {
     
     const trainingInfo = await seasonService.getSeasonTrainingInfo(currentGame.team_id, token);
     
-    res.status(200).json(trainingInfo);
-  });
+    return {
+      success: true,
+      message: 'Season training info retrieved successfully',
+      ...trainingInfo
+    };
+  }
 
   /**
    * Train a player by improving one of their stats
+   * @param request Express request with authenticated user
+   * @param requestBody Details of the player to train
    */
-  trainPlayer = asyncHandler(async (req: Request, res: Response) => {
-    // Get user ID from the request (set by the auth middleware)
-    const userId = req.user?.id;
-    const token = req.headers.authorization?.split(' ')[1] || '';
-    
-    if (!userId) {
+  @Post('train-player')
+  @Security('bearerAuth')
+  @SuccessResponse('200', 'Player trained successfully')
+  public async trainPlayer(
+    @Request() request: any,
+    @Body() requestBody: TrainPlayerRequestModel
+  ): Promise<TrainPlayerResponseModel> {
+    if (!request || !request.user || !request.user.id) {
       throw new ApiError(401, 'Unauthorized');
     }
+    
+    const userId = request.user.id;
+    const token = request.headers.authorization?.split(' ')[1] || '';
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
@@ -53,34 +91,37 @@ class SeasonController {
       throw new ApiError(404, 'No active game found');
     }
     
-    const { player_id, stat_name } = req.body;
+    // Train the player
+    const { player, season } = await trainingService.trainPlayer(
+      currentGame.team_id, 
+      requestBody,
+      token
+    );
     
-    // Validate required fields
-    if (!player_id || !stat_name) {
-      return res.status(400).json({
-        error: 'Missing required fields: player_id and stat_name are required'
-      });
-    }
-    
-    const result = await trainingService.trainPlayer(currentGame.team_id, {
-      player_id,
-      stat_name: stat_name as PlayerStatName
-    }, token);
-    
-    res.status(200).json(result);
-  });
+    return {
+      success: true,
+      message: 'Player trained successfully',
+      player,
+      season
+    };
+  }
 
   /**
    * Get scouting information for the current season
+   * @param request Express request with authenticated user
    */
-  getSeasonScoutingInfo = asyncHandler(async (req: Request, res: Response) => {
-    // Get user ID from the request (set by the auth middleware)
-    const userId = req.user?.id;
-    const token = req.headers.authorization?.split(' ')[1] || '';
-    
-    if (!userId) {
+  @Get('scouting-info')
+  @Security('bearerAuth')
+  @SuccessResponse('200', 'Season scouting info retrieved successfully')
+  public async getSeasonScoutingInfo(
+    @Request() request: any
+  ): Promise<GetSeasonScoutingInfoResponseModel> {
+    if (!request || !request.user || !request.user.id) {
       throw new ApiError(401, 'Unauthorized');
     }
+    
+    const userId = request.user.id;
+    const token = request.headers.authorization?.split(' ')[1] || '';
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
@@ -91,20 +132,29 @@ class SeasonController {
     
     const scoutingInfo = await seasonService.getSeasonScoutingInfo(currentGame.team_id, token);
     
-    res.status(200).json(scoutingInfo);
-  });
+    return {
+      success: true,
+      message: 'Season scouting info retrieved successfully',
+      ...scoutingInfo
+    };
+  }
 
   /**
    * Get all scouted players for the current season
+   * @param request Express request with authenticated user
    */
-  getScoutedPlayers = asyncHandler(async (req: Request, res: Response) => {
-    // Get user ID from the request (set by the auth middleware)
-    const userId = req.user?.id;
-    const token = req.headers.authorization?.split(' ')[1] || '';
-    
-    if (!userId) {
+  @Get('scouted-players')
+  @Security('bearerAuth')
+  @SuccessResponse('200', 'Scouted players retrieved successfully')
+  public async getScoutedPlayers(
+    @Request() request: any
+  ): Promise<GetScoutedPlayersResponseModel> {
+    if (!request || !request.user || !request.user.id) {
       throw new ApiError(401, 'Unauthorized');
     }
+    
+    const userId = request.user.id;
+    const token = request.headers.authorization?.split(' ')[1] || '';
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
@@ -115,20 +165,31 @@ class SeasonController {
     
     const scoutedPlayers = await seasonService.getScoutedPlayers(currentGame.team_id, token);
     
-    res.status(200).json({ scouted_players: scoutedPlayers });
-  });
+    return {
+      success: true,
+      message: 'Scouted players retrieved successfully',
+      scouted_players: scoutedPlayers
+    };
+  }
 
   /**
    * Generate scouted players for the current season
+   * @param request Express request with authenticated user
+   * @param requestBody Details of the scouted players to generate
    */
-  scoutPlayers = asyncHandler(async (req: Request, res: Response) => {
-    // Get user ID from the request (set by the auth middleware)
-    const userId = req.user?.id;
-    const token = req.headers.authorization?.split(' ')[1] || '';
-    
-    if (!userId) {
+  @Post('scout-players')
+  @Security('bearerAuth')
+  @SuccessResponse('200', 'Scouted players generated successfully')
+  public async scoutPlayers(
+    @Request() request: any,
+    @Body() requestBody: ScoutPlayersRequestModel
+  ): Promise<ScoutPlayersResponseModel> {
+    if (!request || !request.user || !request.user.id) {
       throw new ApiError(401, 'Unauthorized');
     }
+    
+    const userId = request.user.id;
+    const token = request.headers.authorization?.split(' ')[1] || '';
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
@@ -137,24 +198,34 @@ class SeasonController {
       throw new ApiError(404, 'No active game found');
     }
     
-    const { count } = req.body;
+    // Scout players
+    const scoutedPlayers = await scoutService.scoutPlayers(currentGame.team_id, requestBody, token);
     
-    const result = await scoutService.scoutPlayers(currentGame.team_id, { count }, token);
-    
-    res.status(200).json(result);
-  });
+    return {
+      success: true,
+      message: 'Scouted players generated successfully',
+      scouted_players: scoutedPlayers
+    };
+  }
 
   /**
    * Purchase a scouted player for the team
+   * @param request Express request with authenticated user
+   * @param requestBody Details of the scouted player to purchase
    */
-  purchaseScoutedPlayer = asyncHandler(async (req: Request, res: Response) => {
-    // Get user ID from the request (set by the auth middleware)
-    const userId = req.user?.id;
-    const token = req.headers.authorization?.split(' ')[1] || '';
-    
-    if (!userId) {
+  @Post('purchase-scouted-player')
+  @Security('bearerAuth')
+  @SuccessResponse('200', 'Scouted player purchased successfully')
+  public async purchaseScoutedPlayer(
+    @Request() request: any,
+    @Body() requestBody: PurchaseScoutedPlayerRequestModel
+  ): Promise<PurchaseScoutedPlayerResponseModel> {
+    if (!request || !request.user || !request.user.id) {
       throw new ApiError(401, 'Unauthorized');
     }
+    
+    const userId = request.user.id;
+    const token = request.headers.authorization?.split(' ')[1] || '';
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
@@ -163,33 +234,32 @@ class SeasonController {
       throw new ApiError(404, 'No active game found');
     }
     
-    const { scouted_player_id } = req.body;
+    // Purchase the scouted player
+    const result = await scoutService.purchaseScoutedPlayer(currentGame.team_id, requestBody, token);
     
-    // Validate required fields
-    if (!scouted_player_id) {
-      return res.status(400).json({
-        error: 'Missing required field: scouted_player_id is required'
-      });
-    }
-    
-    const result = await scoutService.purchaseScoutedPlayer(currentGame.team_id, { scouted_player_id }, token);
-    
-    res.status(200).json(result);
-  });
+    return {
+      success: true,
+      message: 'Scouted player purchased successfully',
+      ...result
+    };
+  }
 
   /**
-   * Get facility information for the current team
-   * @route GET /api/seasons/facility-info
-   * @access Private
+   * Get facility information
+   * @param request Express request with authenticated user
    */
-  getFacilityInfo = asyncHandler(async (req: Request, res: Response) => {
-    // Get user ID from the request (set by the auth middleware)
-    const userId = req.user?.id;
-    const token = req.headers.authorization?.split(' ')[1] || '';
-    
-    if (!userId) {
+  @Get('facility-info')
+  @Security('bearerAuth')
+  @SuccessResponse('200', 'Facility info retrieved successfully')
+  public async getFacilityInfo(
+    @Request() request: any
+  ): Promise<GetFacilityInfoResponseModel> {
+    if (!request || !request.user || !request.user.id) {
       throw new ApiError(401, 'Unauthorized');
     }
+    
+    const userId = request.user.id;
+    const token = request.headers.authorization?.split(' ')[1] || '';
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
@@ -200,29 +270,31 @@ class SeasonController {
     
     const facilityInfo = await seasonService.getFacilityInfo(currentGame.team_id, token);
     
-    res.status(200).json(facilityInfo);
-  });
+    return {
+      success: true,
+      message: 'Facility info retrieved successfully',
+      ...facilityInfo,
+    };
+  }
 
   /**
-   * Upgrade a facility (training or scouting)
-   * @route POST /api/seasons/upgrade-facility
-   * @access Private
+   * Upgrade a facility
+   * @param request Express request with authenticated user
+   * @param requestBody Details of the facility to upgrade
    */
-  upgradeFacility = asyncHandler(async (req: Request, res: Response) => {
-    // Get user ID from the request (set by the auth middleware)
-    const userId = req.user?.id;
-    const token = req.headers.authorization?.split(' ')[1] || '';
-    
-    if (!userId) {
+  @Post('upgrade-facility')
+  @Security('bearerAuth')
+  @SuccessResponse('200', 'Facility upgraded successfully')
+  public async upgradeFacility(
+    @Request() request: any,
+    @Body() requestBody: UpgradeFacilityRequestModel
+  ): Promise<UpgradeFacilityResponseModel> {
+    if (!request || !request.user || !request.user.id) {
       throw new ApiError(401, 'Unauthorized');
     }
     
-    // Validate request body
-    const { facility_type } = req.body;
-    
-    if (!facility_type || !['training', 'scout', 'stadium'].includes(facility_type)) {
-      throw new ApiError(400, "facility_type must be one of: 'training', 'scout', or 'stadium'");
-    }
+    const userId = request.user.id;
+    const token = request.headers.authorization?.split(' ')[1] || '';
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
@@ -231,14 +303,24 @@ class SeasonController {
       throw new ApiError(404, 'No active game found');
     }
     
-    const result = await seasonService.upgradeFacility(
+    // Upgrade the facility
+    const { team, cost } = await seasonService.upgradeFacility(
       currentGame.team_id, 
-      facility_type, 
+      requestBody.facility_type, 
       token
     );
     
-    res.status(200).json(result);
-  });
+    return {
+      success: true,
+      message: 'Facility upgraded successfully',
+      team: {
+        id: team.id,
+        name: team.name,
+        budget: team.budget,
+        training_facility_level: team.training_facility_level,
+        scout_level: team.scout_level
+      },
+      cost
+    };
+  }
 }
-
-export default new SeasonController();
