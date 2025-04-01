@@ -1,5 +1,5 @@
 import { ApiError } from '../middleware/error.middleware';
-import { EndSeasonResponse, PlayerStatus, PlayMatchResponse } from '../types';
+import { PlayerStatus } from '../types';
 import { getFixturesByMatchDay, getSeasonFixtures, updateFixture, getTeamName, addTeamToNextSeason } from '../repositories/matchRepository';
 import { getGameById, updateGame } from '../repositories/gameRepository';
 import { getTeamByGameId } from '../repositories/teamRepository';
@@ -14,6 +14,8 @@ import * as playerRepository from '../repositories/playerRepository';
 // Import match engine components
 import { runMatchSimulation, convertToMatchTeams } from '../match-engine';
 import { PlayerGenerator } from '../utils/player-generator';
+import { PlayMatchResponse } from '../models/MatchModels';
+import { EndSeasonResponse } from '../models/SeasonModels';
 
 class MatchService {
   /**

@@ -155,7 +155,7 @@ export interface GetLeagueResponseModel {
    * @example "League data retrieved successfully" 
    */
   message: string;
-  
+
   /** 
    * Season number
    * @example 1 

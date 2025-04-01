@@ -1,4 +1,4 @@
-import { BallStatus, GameState, MatchPlayer, Round, Team, Turn, PlayerAction } from '../types';
+import { BallStatus, GameState, MatchPlayer, Round, Team, Turn, PlayerAction, ActionResult } from '../types';
 import { MATCH_CONSTANTS } from '../../utils/constants';
 import { deepMerge } from '../utils/deepMerge';
 
@@ -65,7 +65,7 @@ const createBallPickupTurn = (
     playerId: player.id,
     action: PlayerAction.PICK_UP,
     ballId,
-    actionResult: 'picked_up',
+    actionResult: ActionResult.PICKED_UP,
     endTurnGameStateUpdate: {
       playerState: {
         [player.id]: {

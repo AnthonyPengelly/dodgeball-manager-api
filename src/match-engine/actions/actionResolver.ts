@@ -1,4 +1,4 @@
-import { GameState, MatchPlayer, PlayerReaction } from '../types';
+import { ActionResult, GameState, MatchPlayer, PlayerReaction } from '../types';
 
 /**
  * Resolves the outcome of a player's action (throwing)
@@ -12,7 +12,7 @@ export const resolveAction = (
   actor: MatchPlayer, 
   target: MatchPlayer, 
   gameState: GameState
-): { result: 'hit' | 'miss' | 'caught' | 'blocked' } => {
+): { result: ActionResult } => {
   // For throwing actions, compare player stats with random modifiers
   // The larger of the actor's throwing vs target's reaction stat, plus a random modifier
   
@@ -21,18 +21,18 @@ export const resolveAction = (
   const reactionEffectiveness = getBaseReactionEffectiveness(reaction, target) + (Math.random() * 2 - 1); // Random -1 to +1
   
   if (throwEffectiveness > reactionEffectiveness) {
-    return { result: 'hit' };
+    return { result: ActionResult.HIT };
   }
   
   switch (reaction) {
     case PlayerReaction.CATCH:
-      return { result: 'caught' };
+      return { result: ActionResult.CAUGHT };
     case PlayerReaction.DODGE:
-      return { result: 'miss' };
+      return { result: ActionResult.MISS };
     case PlayerReaction.BLOCK:
-      return { result: 'blocked' };
+      return { result: ActionResult.BLOCKED };
   }
-  return { result: 'miss' };
+  return { result: ActionResult.MISS };
 };
 
 const getBaseReactionEffectiveness = (reaction: PlayerReaction, target: MatchPlayer): number => {

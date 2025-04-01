@@ -177,35 +177,6 @@ export interface TransferListedPlayer extends Player {
   sell_price: number;
 }
 
-export interface GetTransferListResponse {
-  success: boolean;
-  message: string;
-  transfer_list: TransferListedPlayer[];
-  season: number;
-}
-
-export interface BuyTransferListedPlayerRequest {
-  player_id: string;
-}
-
-export interface BuyTransferListedPlayerResponse {
-  success: boolean;
-  message: string;
-  player: Player;
-  budget_remaining: number;
-}
-
-export interface SellPlayerRequest {
-  player_id: string;
-}
-
-export interface SellPlayerResponse {
-  success: boolean;
-  message: string;
-  sold_player: Player;
-  budget: number;
-}
-
 // League related types
 export interface OpponentTeam {
   id: string;
@@ -250,52 +221,7 @@ export interface LeagueTableEntry {
   points: number;
 }
 
-export interface GetLeagueResponse {
-  success: boolean;
-  message: string;
-  season: number;
-  fixtures: Fixture[];
-  table: LeagueTableEntry[];
-}
-
 export interface EnhancedFixture extends Fixture {
   home_team_name: string;
   away_team_name: string;
-}
-
-export interface PlayMatchResponse {
-  success: boolean;
-  message: string;
-  match: EnhancedFixture;
-  match_day: number;
-  other_match?: EnhancedFixture;
-  simulated_match?: any; // Full match simulation data from the match engine
-}
-
-export interface EndSeasonResponse {
-  success: boolean;
-  message: string;
-  game_ended: boolean;
-  season_completed: number;
-  next_season?: number;
-  promoted?: boolean;
-  champion?: boolean;
-  budget_update?: {
-    previous: number;
-    stadium_income: number;
-    wages_paid: number;
-    new_budget: number;
-  };
-  promoted_team?: {
-    id: string;
-    name: string;
-  };
-}
-
-export interface StartMainSeasonResponse {
-  success: boolean;
-  message: string;
-  game: Game;
-  fixtures: Fixture[];
-  opponent_teams: OpponentTeam[];
 }

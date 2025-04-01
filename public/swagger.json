@@ -1295,6 +1295,108 @@
 		"contact": {}
 	},
 	"paths": {
+		"/transfers": {
+			"get": {
+				"operationId": "GetTransferList",
+				"responses": {
+					"200": {
+						"description": "Transfer list retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					}
+				},
+				"description": "Get the list of players available for transfer",
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/transfers/buy": {
+			"post": {
+				"operationId": "BuyPlayer",
+				"responses": {
+					"200": {
+						"description": "Player bought successfully",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					}
+				},
+				"description": "Buy a player from the transfer list",
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"player_id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"player_id"
+								],
+								"type": "object"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/transfers/sell": {
+			"post": {
+				"operationId": "SellPlayer",
+				"responses": {
+					"200": {
+						"description": "Player sold successfully",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					}
+				},
+				"description": "Sell a player from the team",
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"player_id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"player_id"
+								],
+								"type": "object"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/seasons/training-info": {
 			"get": {
 				"operationId": "GetSeasonTrainingInfo",
@@ -1647,6 +1749,50 @@
 				"security": [
 					{
 						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/matches/play-next": {
+			"post": {
+				"operationId": "PlayNextMatch",
+				"responses": {
+					"200": {
+						"description": "Match played successfully",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					}
+				},
+				"description": "Play the next scheduled match",
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/matches/end-season": {
+			"post": {
+				"operationId": "EndSeason",
+				"responses": {
+					"200": {
+						"description": "Season ended successfully",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					}
+				},
+				"description": "End the current season and handle promotions/relegations",
+				"security": [
+					{
+						"jwt": []
 					}
 				],
 				"parameters": []

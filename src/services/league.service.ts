@@ -1,6 +1,6 @@
 import { createClientFromToken, supabaseAdmin } from '../utils/supabase';
 import { ApiError } from '../middleware/error.middleware';
-import { Fixture, GetLeagueResponse, LeagueTableEntry, OpponentTeam } from '../types';
+import { Fixture, OpponentTeam } from '../types';
 import TeamNameGenerator from '../utils/team-name-generator';
 import * as opponentTeamRepository from '../repositories/opponentTeamRepository';
 import * as teamRepository from '../repositories/teamRepository';
@@ -13,6 +13,7 @@ import {
   createSeasonFixtures,
   createOpponentTeamFixtures
 } from '../utils/leagueUtils';
+import { GetLeagueResponseModel } from '../models/LeagueModels';
 
 // Number of opponent teams to generate per season
 const OPPONENT_TEAMS_COUNT = 3;
@@ -193,7 +194,7 @@ class LeagueService {
     gameId: string, 
     token: string, 
     season?: number
-  ): Promise<GetLeagueResponse> {
+  ): Promise<GetLeagueResponseModel> {
     try {
       // Get the current game
       const game = await gameRepository.getGameById(gameId, token);

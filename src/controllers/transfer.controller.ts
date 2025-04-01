@@ -1,98 +1,125 @@
-import { Request, Response } from 'express';
-import { asyncHandler } from '../utils/asyncHandler';
+import { Body, Controller, Get, Post, Request, Route, Security, SuccessResponse } from 'tsoa';
+import { Request as ExpressRequest } from 'express';
 import { ApiError } from '../middleware/error.middleware';
 import transferService from '../services/transfer.service';
 import gameService from '../services/game.service';
 
-class TransferController {
+/**
+ * Handles player transfer operations
+ */
+@Route('transfers')
+@Security('jwt')
+export class TransferController extends Controller {
   /**
    * Get the list of players available for transfer
-   * @route GET /api/transfers
-   * @access Private
+   * @returns The list of players available for transfer
    */
-  getTransferList = asyncHandler(async (req: Request, res: Response) => {
+  @Get()
+  @SuccessResponse(200, 'Transfer list retrieved successfully')
+  public async getTransferList(@Request() req: ExpressRequest): Promise<any> {
     const userId = req.user?.id;
     const token = req.headers.authorization?.split(' ')[1] || '';
     
     if (!userId) {
-      throw new ApiError(401, 'Unauthorized');
+      this.setStatus(401);
+      return { message: 'Unauthorized' };
     }
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
     
     if (!currentGame) {
-      throw new ApiError(404, 'No active game found');
+      this.setStatus(404);
+      return { message: 'No active game found' };
     }
     
     const transferList = await transferService.getTransferList(currentGame.team_id, token);
     
-    res.status(200).json(transferList);
-  });
+    this.setStatus(200);
+    return transferList;
+  }
   
   /**
    * Buy a player from the transfer list
-   * @route POST /api/transfers/buy
-   * @access Private
+   * @param player_id The ID of the player to buy
+   * @returns The result of buying the player
    */
-  buyPlayer = asyncHandler(async (req: Request, res: Response) => {
+  @Post('buy')
+  @SuccessResponse(200, 'Player bought successfully')
+  public async buyPlayer(
+    @Request() req: ExpressRequest,
+    @Body() requestBody: { player_id: string }
+  ): Promise<any> {
     const userId = req.user?.id;
     const token = req.headers.authorization?.split(' ')[1] || '';
     
     if (!userId) {
-      throw new ApiError(401, 'Unauthorized');
+      this.setStatus(401);
+      return { message: 'Unauthorized' };
     }
     
     // Validate request body
-    const { player_id } = req.body;
+    const { player_id } = requestBody;
     
     if (!player_id) {
-      throw new ApiError(400, 'player_id is required');
+      this.setStatus(400);
+      return { message: 'player_id is required' };
     }
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
     
     if (!currentGame) {
-      throw new ApiError(404, 'No active game found');
+      this.setStatus(404);
+      return { message: 'No active game found' };
     }
     
     const result = await transferService.buyPlayer(currentGame.team_id, player_id, token);
     
-    res.status(200).json(result);
-  });
+    this.setStatus(200);
+    return result;
+  }
   
   /**
    * Sell a player from the team
-   * @route POST /api/transfers/sell
-   * @access Private
+   * @param player_id The ID of the player to sell
+   * @returns The result of selling the player
    */
-  sellPlayer = asyncHandler(async (req: Request, res: Response) => {
+  @Post('sell')
+  @SuccessResponse(200, 'Player sold successfully')
+  public async sellPlayer(
+    @Request() req: ExpressRequest,
+    @Body() requestBody: { player_id: string }
+  ): Promise<any> {
     const userId = req.user?.id;
     const token = req.headers.authorization?.split(' ')[1] || '';
     
     if (!userId) {
-      throw new ApiError(401, 'Unauthorized');
+      this.setStatus(401);
+      return { message: 'Unauthorized' };
     }
     
     // Validate request body
-    const { player_id } = req.body;
+    const { player_id } = requestBody;
     
     if (!player_id) {
-      throw new ApiError(400, 'player_id is required');
+      this.setStatus(400);
+      return { message: 'player_id is required' };
     }
     
     // Get the current game
     const currentGame = await gameService.getCurrentGame(userId, token);
     
     if (!currentGame) {
-      throw new ApiError(404, 'No active game found');
+      this.setStatus(404);
+      return { message: 'No active game found' };
     }
     
     const result = await transferService.sellPlayer(currentGame.team_id, player_id, token);
     
-    res.status(200).json(result);
-  });
+    this.setStatus(200);
+    return result;
+  }
 }
 
 export default new TransferController();

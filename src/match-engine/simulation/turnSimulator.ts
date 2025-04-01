@@ -1,4 +1,5 @@
 import { 
+  ActionResult,
   BallState, BallStatus, GameState, MatchPlayer, PlayerAction, 
   PlayerState, Turn 
 } from '../types';
@@ -104,7 +105,7 @@ export const simulateTurn = (
       if (targetBallId !== null) {
         // Pick up the ball
         turn.ballId = targetBallId;
-        turn.actionResult = 'picked_up';
+        turn.actionResult = ActionResult.PICKED_UP;
         
         // Update player state
         updatePlayerState(player.id, { ballId: targetBallId }, turn);
@@ -124,7 +125,7 @@ export const simulateTurn = (
       
     case PlayerAction.PREPARE:
       // Player prepares for next turn (dodge/catch bonus)
-      turn.actionResult = 'prepared';
+      turn.actionResult = ActionResult.PREPARED;
       break;
   }
   

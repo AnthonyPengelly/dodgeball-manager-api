@@ -1,9 +1,6 @@
 import { 
   Player, 
-  TransferListedPlayer, 
-  GetTransferListResponse, 
-  BuyTransferListedPlayerResponse, 
-  SellPlayerResponse,
+  TransferListedPlayer,
   PlayerStatus
 } from '../types';
 import { ApiError } from '../middleware/error.middleware';
@@ -14,6 +11,7 @@ import { PLAYER_STATUS, TEAM_CONSTANTS } from '../utils/constants';
 import * as transferRepository from '../repositories/transferRepository';
 import * as playerRepository from '../repositories/playerRepository';
 import * as teamRepository from '../repositories/teamRepository';
+import { GetTransferListResponse, BuyTransferListedPlayerResponse, SellPlayerResponse } from '../models/TransferModels';
 
 // Number of players on transfer list per season
 const TRANSFER_LIST_SIZE = 8;
