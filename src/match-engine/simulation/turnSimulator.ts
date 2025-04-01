@@ -40,10 +40,10 @@ export const simulateTurn = (
   };
   
   // Decide which action to take
-  turn.action = makeActionDecision(decisionContext);
+  const decision = makeActionDecision(decisionContext);
+  turn.action = decision.action;
   
   // Process the action based on the decision
-  let targetPlayerId: string | null = null;
   let targetBallId: number | null = null;
   
   // Handle different action types
@@ -51,19 +51,18 @@ export const simulateTurn = (
     case PlayerAction.THROW:
       // Only proceed if player has a ball
       if (playerState.ballId !== null) {
-        targetPlayerId = selectThrowTarget(player, gameState);
         targetBallId = playerState.ballId;
         turn.ballId = targetBallId;
         
-        if (targetPlayerId) {
+        if (decision.targetPlayerId) {
           // Target player makes a reaction decision
-          const targetPlayer = findPlayerById(targetPlayerId, gameState);
+          const targetPlayer = findPlayerById(decision.targetPlayerId, gameState);
           
           if (targetPlayer && !targetPlayer.eliminated) {
             const reactionContext = {
               playerState: targetPlayer,
               gameState,
-              previousTurn: findPlayerPreviousTurn(targetPlayerId, gameState)
+              previousTurn: findPlayerPreviousTurn(decision.targetPlayerId, gameState)
             };
             
             // Target decides how to react
@@ -75,8 +74,8 @@ export const simulateTurn = (
             
             // If the throw hit or was caught, handle eliminations
             if (throwResult.result === 'hit') {
-              turn.eliminatedPlayerId = targetPlayerId;
-              handlePlayerEliminated(targetPlayerId, gameState, turn);
+              turn.eliminatedPlayerId = decision.targetPlayerId;
+              handlePlayerEliminated(decision.targetPlayerId, gameState, turn);
             } else if (throwResult.result === 'caught') {
               turn.eliminatedPlayerId = player.id;
               handlePlayerEliminated(player.id, gameState, turn);
@@ -89,7 +88,7 @@ export const simulateTurn = (
             }
             
             // Update ball state
-            handleThrowResult(targetBallId, throwResult.result, targetPlayerId, gameState, turn);
+            handleThrowResult(targetBallId, throwResult.result, decision.targetPlayerId, gameState, turn);
           }
         }
         
@@ -159,25 +158,6 @@ const findPlayerPreviousTurn = (playerId: string, gameState: GameState): Turn | 
   // This would need to traverse previous rounds stored in the game state
   // For now we'll return null as we don't have access to previous rounds directly
   return null;
-};
-
-/**
- * Select a target player to throw at
- */
-const selectThrowTarget = (thrower: MatchPlayer, gameState: Readonly< GameState>): string | null => {
-  // Find all active players on the opposing team
-  const potentialTargets = Object.entries(gameState.playerState)
-    .filter(([id, state]) => 
-      !state.eliminated && 
-      state.isHome !== thrower.isHome
-    )
-    .map(([id]) => id);
-  
-  if (potentialTargets.length === 0) return null;
-  
-  // For now, just pick a random target
-  const randomIndex = Math.floor(Math.random() * potentialTargets.length);
-  return potentialTargets[randomIndex];
 };
 
 /**

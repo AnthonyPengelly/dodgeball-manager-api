@@ -253,3 +253,9 @@ export interface DecisionContext {
   /** Previous turn in the game */
   previousTurn: Turn | null;
 }
+
+
+export interface PlayerDecision {
+  action: PlayerAction;
+  targetPlayerId?: string;
+}
