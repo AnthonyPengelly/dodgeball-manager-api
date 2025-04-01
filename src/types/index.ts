@@ -225,3 +225,27 @@ export interface EnhancedFixture extends Fixture {
   home_team_name: string;
   away_team_name: string;
 }
+
+export enum TargetPriority {
+  HighestThreat = 'highest_threat',
+  WeakestDefence = 'weakest_defence',
+  Nearest = 'nearest',
+  Random = 'random'
+}
+
+export interface PlayerInstructions extends PlayerInstructionsForMatch {
+  id: string;
+  fixture_id: string;
+  player_id: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PlayerInstructionsForMatch {
+  /** How likely the player is to throw vs. hold the ball */
+  throw_aggression: number;
+  /** How likely the player is to catch vs. dodge */
+  catch_aggression: number;
+  /** How the player decides on their target */
+  target_priority: TargetPriority;
+}

@@ -138,6 +138,14 @@ CREATE TABLE IF NOT EXISTS opponent_team_players (
   CONSTRAINT unique_player_opponent_team_season UNIQUE (opponent_team_id, player_id, season)
 );
 
+-- Create an enum for target priority
+CREATE TYPE target_priority AS ENUM (
+    'highest_threat',
+    'weakest_defence', 
+    'nearest', 
+    'random'
+);
+
 -- Fixtures table
 CREATE TABLE IF NOT EXISTS fixtures (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -158,6 +166,26 @@ CREATE TABLE IF NOT EXISTS fixtures (
   CONSTRAINT unique_fixture_per_game_season_matchday UNIQUE (game_id, season, match_day, home_team_id, away_team_id)
 );
 
+-- Create player_instructions table
+CREATE TABLE IF NOT EXISTS player_instructions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fixture_id UUID NOT NULL REFERENCES fixtures(id) ON DELETE CASCADE,
+    player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    
+    -- Aggression levels for throwing and catching (0-100)
+    throw_aggression INTEGER NOT NULL CHECK (throw_aggression BETWEEN 0 AND 100),
+    catch_aggression INTEGER NOT NULL CHECK (catch_aggression BETWEEN 0 AND 100),
+    
+    -- Target priority enum
+    target_priority target_priority NOT NULL,
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    -- Ensure unique instructions per player per fixture
+    UNIQUE(fixture_id, player_id)
+);
+
 -- Add RLS (Row Level Security) policies for data access control
 -- Enable RLS on tables
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
@@ -169,6 +197,7 @@ ALTER TABLE opponent_teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fixtures ENABLE ROW LEVEL SECURITY;
 ALTER TABLE season_opponent_teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE opponent_team_players ENABLE ROW LEVEL SECURITY;
+ALTER TABLE player_instructions ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
 -- Teams: users can only see and modify their own teams
@@ -217,6 +246,18 @@ CREATE POLICY fixtures_user_policy ON fixtures
   USING (game_id IN (
     SELECT game_id FROM teams WHERE owner_id = auth.uid()
   ));
+
+-- Policy to allow access only to users who have teams in the game
+CREATE POLICY player_instructions_user_policy ON player_instructions
+USING (
+    fixture_id IN (
+        SELECT id FROM fixtures 
+        WHERE game_id IN (
+            SELECT game_id FROM teams 
+            WHERE owner_id = auth.uid()
+        )
+    )
+);
 
 -- Create policy to allow users to view transfer list for their games
 CREATE POLICY transfer_list_select_policy ON transfer_list 

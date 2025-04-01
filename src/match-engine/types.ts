@@ -1,3 +1,4 @@
+import { PlayerInstructionsForMatch, TargetPriority } from "../types";
 import { DeepPartial } from "./utils/deepMerge";
 
 /**
@@ -214,7 +215,7 @@ export enum BallStatus {
  * Represents a player in a match with their attributes
  * @tsoaModel
  */
-export interface MatchPlayer {
+export interface MatchPlayer extends PlayerInstructionsForMatch {
   /** Unique identifier for the player */
   id: string;
   /** Name of the player */

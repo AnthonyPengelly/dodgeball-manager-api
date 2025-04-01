@@ -1,4 +1,4 @@
-import { Player } from '../types';
+import { Player, PlayerInstructions, PlayerInstructionsForMatch, TargetPriority } from '../types';
 import { MATCH_CONSTANTS } from '../utils/constants';
 import { MatchPlayer, Team } from './types';
 
@@ -19,7 +19,8 @@ export const convertToMatchTeams = (
   homePlayers: Player[],
   awayTeamId: string,
   awayTeamName: string,
-  awayPlayers: Player[]
+  awayPlayers: Player[],
+  playerInstructions: PlayerInstructions[],
 ): { homeTeam: Team, awayTeam: Team } => {
   // Convert home team players to match engine format
   const homeMatchPlayers: MatchPlayer[] = homePlayers.map(player => ({
@@ -35,8 +36,11 @@ export const convertToMatchTeams = (
     speed: player.speed,
     positionalSense: player.positional_sense,
     teamwork: player.teamwork,
-    clutchFactor: player.clutch_factor
+    clutchFactor: player.clutch_factor,
+    ...getPlayerInstructions(player.id, playerInstructions)
   }));
+  const instructedHomePlayers = homeMatchPlayers.filter(player => playerInstructions.find(i => i.player_id === player.id));
+  const selectedHomePlayers = instructedHomePlayers.length === MATCH_CONSTANTS.PLAYERS_PER_TEAM ? instructedHomePlayers : homeMatchPlayers.slice(0, MATCH_CONSTANTS.PLAYERS_PER_TEAM);
   
   // Convert away team players to match engine format
   const awayMatchPlayers: MatchPlayer[] = awayPlayers.map(player => ({
@@ -52,30 +56,55 @@ export const convertToMatchTeams = (
     speed: player.speed,
     positionalSense: player.positional_sense,
     teamwork: player.teamwork,
-    clutchFactor: player.clutch_factor
+    clutchFactor: player.clutch_factor,
+    ...getPlayerInstructions(player.id, playerInstructions)
   }));
-  
-  if (awayPlayers.length < MATCH_CONSTANTS.PLAYERS_PER_TEAM) {
-    throw new Error('Away team must have at least 6 players');
+  const instructedAwayPlayers = awayMatchPlayers.filter(player => playerInstructions.find(i => i.player_id === player.id));
+  const selectedAwayPlayers = instructedAwayPlayers.length === MATCH_CONSTANTS.PLAYERS_PER_TEAM ? instructedAwayPlayers : awayMatchPlayers.slice(0, MATCH_CONSTANTS.PLAYERS_PER_TEAM);
+
+  if (selectedAwayPlayers.length < MATCH_CONSTANTS.PLAYERS_PER_TEAM) {
+    throw new Error(`Away team must have at least ${MATCH_CONSTANTS.PLAYERS_PER_TEAM} players`);
   }
-  if (homePlayers.length < MATCH_CONSTANTS.PLAYERS_PER_TEAM) {
-    throw new Error('Home team must have at least 6 players');
+  if (selectedHomePlayers.length < MATCH_CONSTANTS.PLAYERS_PER_TEAM) {
+    throw new Error(`Home team must have at least ${MATCH_CONSTANTS.PLAYERS_PER_TEAM} players`);
   }
   
   // Create team objects with exactly 6 players each
   const homeTeam: Team = {
     id: homeTeamId,
     name: homeTeamName,
-    players: homeMatchPlayers.slice(0, MATCH_CONSTANTS.PLAYERS_PER_TEAM),
+    players: selectedHomePlayers,
     isHome: true
   };
   
   const awayTeam: Team = {
     id: awayTeamId,
     name: awayTeamName,
-    players: awayMatchPlayers.slice(0, MATCH_CONSTANTS.PLAYERS_PER_TEAM),
+    players: selectedAwayPlayers,
     isHome: false
   };
   
   return { homeTeam, awayTeam };
 };
+
+const getPlayerInstructions = (playerId: string, instructions: PlayerInstructions[]): PlayerInstructionsForMatch => {
+  const instruction = instructions.find(i => i.player_id === playerId);
+  return instruction ? getStrippedDownInstructions(instruction) : generateRandomPlayerInstructions();
+};
+
+const generateRandomPlayerInstructions = (): PlayerInstructionsForMatch => {
+  return {
+    throw_aggression: Math.floor(Math.random() * 100),
+    catch_aggression: Math.floor(Math.random() * 100),
+    target_priority: 'random' as TargetPriority
+  };
+};
+
+const getStrippedDownInstructions = (instructions: PlayerInstructions): PlayerInstructionsForMatch => {
+  return {
+    throw_aggression: instructions.throw_aggression,
+    catch_aggression: instructions.catch_aggression,
+    target_priority: instructions.target_priority
+  };
+};
+  

@@ -1337,9 +1337,32 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TargetPriority": {
+				"enum": [
+					"highest_threat",
+					"weakest_defence",
+					"nearest",
+					"random"
+				],
+				"type": "string"
+			},
 			"PlayerState": {
 				"description": "Represents the state of a player during a game",
 				"properties": {
+					"throw_aggression": {
+						"type": "number",
+						"format": "double",
+						"description": "How likely the player is to throw vs. hold the ball"
+					},
+					"catch_aggression": {
+						"type": "number",
+						"format": "double",
+						"description": "How likely the player is to catch vs. dodge"
+					},
+					"target_priority": {
+						"$ref": "#/components/schemas/TargetPriority",
+						"description": "How the player decides on their target"
+					},
 					"id": {
 						"type": "string",
 						"description": "Unique identifier for the player"
@@ -1410,6 +1433,9 @@
 					}
 				},
 				"required": [
+					"throw_aggression",
+					"catch_aggression",
+					"target_priority",
 					"id",
 					"name",
 					"isHome",
@@ -1615,6 +1641,20 @@
 						"type": "number",
 						"format": "double",
 						"description": "Player's performance when there are few players still on their team"
+					},
+					"throw_aggression": {
+						"type": "number",
+						"format": "double",
+						"description": "How likely the player is to throw vs. hold the ball"
+					},
+					"catch_aggression": {
+						"type": "number",
+						"format": "double",
+						"description": "How likely the player is to catch vs. dodge"
+					},
+					"target_priority": {
+						"$ref": "#/components/schemas/TargetPriority",
+						"description": "How the player decides on their target"
 					}
 				},
 				"type": "object",
@@ -1981,6 +2021,20 @@
 			"MatchPlayer": {
 				"description": "Represents a player in a match with their attributes",
 				"properties": {
+					"throw_aggression": {
+						"type": "number",
+						"format": "double",
+						"description": "How likely the player is to throw vs. hold the ball"
+					},
+					"catch_aggression": {
+						"type": "number",
+						"format": "double",
+						"description": "How likely the player is to catch vs. dodge"
+					},
+					"target_priority": {
+						"$ref": "#/components/schemas/TargetPriority",
+						"description": "How the player decides on their target"
+					},
 					"id": {
 						"type": "string",
 						"description": "Unique identifier for the player"
@@ -2035,6 +2089,9 @@
 					}
 				},
 				"required": [
+					"throw_aggression",
+					"catch_aggression",
+					"target_priority",
 					"id",
 					"name",
 					"isHome",
@@ -2262,6 +2319,138 @@
 					"message",
 					"match",
 					"match_day"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SavePlayerinstructionsResponse": {
+				"description": "Response model for player instructions",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Indicates if the operation was successful"
+					},
+					"message": {
+						"type": "string",
+						"description": "Descriptive message about the operation result"
+					}
+				},
+				"required": [
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SavePlayerinstructionsRequest": {
+				"description": "Request model for player instructions",
+				"properties": {
+					"fixture_id": {
+						"type": "string",
+						"description": "ID of the fixture"
+					},
+					"players": {
+						"items": {
+							"properties": {
+								"target_priority": {
+									"$ref": "#/components/schemas/TargetPriority"
+								},
+								"catch_aggression": {
+									"type": "number",
+									"format": "double"
+								},
+								"throw_aggression": {
+									"type": "number",
+									"format": "double"
+								},
+								"player_id": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"target_priority",
+								"catch_aggression",
+								"throw_aggression",
+								"player_id"
+							],
+							"type": "object"
+						},
+						"type": "array",
+						"description": "Player instructions for each player, the set of 6 players represent the line up chosen"
+					}
+				},
+				"required": [
+					"players"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PlayerInstructions": {
+				"properties": {
+					"throw_aggression": {
+						"type": "number",
+						"format": "double",
+						"description": "How likely the player is to throw vs. hold the ball"
+					},
+					"catch_aggression": {
+						"type": "number",
+						"format": "double",
+						"description": "How likely the player is to catch vs. dodge"
+					},
+					"target_priority": {
+						"$ref": "#/components/schemas/TargetPriority",
+						"description": "How the player decides on their target"
+					},
+					"id": {
+						"type": "string"
+					},
+					"fixture_id": {
+						"type": "string"
+					},
+					"player_id": {
+						"type": "string"
+					},
+					"created_at": {
+						"type": "string"
+					},
+					"updated_at": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"throw_aggression",
+					"catch_aggression",
+					"target_priority",
+					"id",
+					"fixture_id",
+					"player_id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GetPlayerinstructionsResponse": {
+				"description": "Response model for player instructions",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"description": "Indicates if the operation was successful"
+					},
+					"message": {
+						"type": "string",
+						"description": "Descriptive message about the operation result"
+					},
+					"player_instructions": {
+						"items": {
+							"$ref": "#/components/schemas/PlayerInstructions"
+						},
+						"type": "array",
+						"description": "Player instructions for each player"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"player_instructions"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -3123,6 +3312,82 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/matches/save-player-instructions": {
+			"post": {
+				"operationId": "SavePlayerInstructions",
+				"responses": {
+					"200": {
+						"description": "Player instructions saved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SavePlayerinstructionsResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Save player instructions for a specific fixture",
+				"tags": [
+					"Matches"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"description": "Player instructions to save",
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SavePlayerinstructionsRequest",
+								"description": "Player instructions to save"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/matches/player-instructions": {
+			"get": {
+				"operationId": "GetPlayerInstructions",
+				"responses": {
+					"200": {
+						"description": "Player instructions retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GetPlayerinstructionsResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get the player instructions for a fixture",
+				"summary": "Get player instructions",
+				"tags": [
+					"Matches"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "fixtureId",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
 			}
 		},
 		"/leagues": {

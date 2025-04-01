@@ -1,21 +1,17 @@
 import { ApiError } from '../middleware/error.middleware';
-import { PlayerStatus } from '../types';
-import { getFixturesByMatchDay, getSeasonFixtures, updateFixture, getTeamName, addTeamToNextSeason } from '../repositories/matchRepository';
-import { getGameById, updateGame } from '../repositories/gameRepository';
-import { getTeamByGameId } from '../repositories/teamRepository';
-import { getIncompleteFixtures } from '../repositories/fixtureRepository';
-import { updateTeamFinances } from '../repositories/budgetRepository';
-import { generateMatchScore, checkTeamPromotion } from '../utils/matchUtils';
-import { calculateStadiumIncome } from '../utils/seasonUtils';
-import { getOpponentTeamPlayers, getOpponentTeamWithPlayers, addPlayersToOpponentTeam } from '../repositories/opponentTeamRepository';
-import { getTeamPlayers } from '../repositories/playerRepository';
-import leagueService from './league.service';
-import * as playerRepository from '../repositories/playerRepository';
+import { Fixture, Game, PlayerInstructions, PlayerStatus, TargetPriority } from '../types';
+import { getFixturesByMatchDay, updateFixture, getTeamName } from '../repositories/matchRepository';
+import { getGameById, getGameByTeamId, updateGame } from '../repositories/gameRepository';
+import { getTeamByGameId, getTeamById } from '../repositories/teamRepository';
+import { createPlayers, getTeamPlayers } from '../repositories/playerRepository';
 // Import match engine components
 import { runMatchSimulation, convertToMatchTeams } from '../match-engine';
 import { PlayerGenerator } from '../utils/player-generator';
 import { PlayMatchResponse } from '../models/MatchModels';
-import { EndSeasonResponse } from '../models/SeasonModels';
+import { MATCH_CONSTANTS, GAME_STAGE } from '../utils/constants';
+import { getPlayerInstructionsByFixtureId, upsertPlayerInstructions } from '../repositories/playerInstructions.repository';
+import { getOpponentTeamPlayers, addPlayersToOpponentTeam, getOpponentTeamWithPlayers } from '../repositories/opponentTeamRepository';
+import { generateMatchScore } from '../utils/matchUtils';
 
 class MatchService {
   /**
@@ -56,7 +52,11 @@ class MatchService {
       
       // Find fixtures for this match day
       const { userFixture, otherFixture } = this.findMatchDayFixtures(fixtures, userTeam.id);
-      
+      const playerInstructions = await getPlayerInstructionsByFixtureId(gameId, userFixture.id, token);
+      if (!playerInstructions || playerInstructions.length !== MATCH_CONSTANTS.PLAYERS_PER_TEAM) {
+        throw new ApiError(400, 'Full team player instructions not found');
+      }
+
       // For user's fixture: Full match simulation with match engine
       let userMatchSimulation = null;
       let userHomeScore = 0;
@@ -128,7 +128,8 @@ class MatchService {
               userTeamPlayers, 
               opponentTeamId, 
               awayTeamName || 'Away Team', 
-              opponentTeamData.players
+              opponentTeamData.players,
+              playerInstructions
             )
           : convertToMatchTeams(
               opponentTeamId, 
@@ -136,7 +137,8 @@ class MatchService {
               opponentTeamData.players, 
               userTeam.id, 
               awayTeamName || 'Away Team', 
-              userTeamPlayers
+              userTeamPlayers,
+              playerInstructions
             );
         
         // Run the match simulation
@@ -274,7 +276,7 @@ class MatchService {
         ...player.potentialStats
       }));
 
-      const players = await playerRepository.createPlayers(playersToInsert);
+      const players = await createPlayers(playersToInsert);
       const playerIds = players.map(player => player.id);
       // Associate players with the opponent team
       await addPlayersToOpponentTeam(gameId, opponentTeamId, playerIds, season);
@@ -369,8 +371,8 @@ class MatchService {
    * Construct response for playNextMatch
    */
   private constructPlayMatchResponse(
-    userFixture: any,
-    otherFixture: any,
+    userFixture: Fixture,
+    otherFixture: Fixture,
     matchDay: number,
     teamInfo: {
       homeTeamName: string;
@@ -424,6 +426,145 @@ class MatchService {
       },
       simulated_match: simulatedMatch
     };
+  }
+
+  /**
+   * Get player instructions for a specific fixture
+   * @param fixtureId The ID of the fixture
+   * @param token JWT token
+   * @returns Array of player instructions
+   */
+  async getPlayerInstructions(teamId: string, fixtureId: string | undefined, token: string): Promise<PlayerInstructions[]> {
+    try {
+      const game = await getGameByTeamId(teamId, token);
+      if (!game) {
+        throw new ApiError(404, 'Game not found');
+      }
+      const instructions = await getPlayerInstructionsByFixtureId(game.id, fixtureId || await this.getNextFixtureId(game, teamId, token), token);
+      
+      if (!instructions) {
+        return [];
+      }
+      
+      return instructions;
+    } catch (error) {
+      console.error('Error getting player instructions:', error);
+      throw new ApiError(500, 'Failed to get player instructions');
+    }
+  }
+
+  /**
+   * Save player instructions for a specific fixture
+   * @param gameId The ID of the game
+   * @param teamId The ID of the team
+   * @param fixtureId The ID of the fixture
+   * @param instructions Array of player instructions to save
+   * @returns Boolean indicating success
+   */
+  async savePlayerInstructions(
+    gameId: string, 
+    teamId: string, 
+    fixtureId: string | undefined, 
+    instructions: Omit<PlayerInstructions, 'id' | 'created_at' | 'updated_at' | 'fixture_id'>[],
+    token: string,
+  ): Promise<boolean> {
+    // Get the team data
+    const team = await getTeamById(teamId, token);
+    if (!team) {
+      throw new ApiError(404, 'Team not found');
+    }
+    
+    // Get the game data
+    const game = await getGameById(team.game_id, token);
+    if (!game) {
+      throw new ApiError(404, 'Game not found');
+    }
+
+    // Check game stage
+    if (game.game_stage !== GAME_STAGE.REGULAR_SEASON) {
+      throw new ApiError(400, 'Player instructions can only be set during regular season');
+    }
+
+    // Validate fixture exists and is for the next match
+    const fixtures = await getFixturesByMatchDay(
+      gameId, 
+      game.season, 
+      game.match_day + 1,
+      token,
+    );
+    const fixture = fixtureId ? fixtures.find((f: Fixture) => f.id === fixtureId) : fixtures.find((f: Fixture) => f.home_team_id === teamId || f.away_team_id === teamId);
+    if (!fixture) {
+      throw new ApiError(400, 'Invalid fixture');
+    }
+    if (!fixture.status || fixture.status !== 'scheduled') {
+      throw new ApiError(400, 'Fixture is not scheduled');
+    }
+
+    // Validate instructions
+    const { isValid, errors } = await this.validateInstructions(instructions);
+
+    if (!isValid) {
+      throw new ApiError(400, errors.join('; '));
+    }
+
+    // Save player instructions
+    return await upsertPlayerInstructions(fixture.id, instructions, token);
+  }
+
+  /**
+   * Validate player instructions
+   * @param instructions Array of player instructions to validate
+   * @returns Validation result
+   */
+  private async validateInstructions (
+    instructions: Omit<PlayerInstructions, 'id' | 'created_at' | 'updated_at' | 'fixture_id'>[]
+  ): Promise<{ isValid: boolean; errors: string[] }> {
+    const errors: string[] = [];
+
+    // Validate number of instructions
+    if (instructions.length !== MATCH_CONSTANTS.PLAYERS_PER_TEAM) {
+      errors.push(`Must provide exactly ${MATCH_CONSTANTS.PLAYERS_PER_TEAM} player instructions`);
+    }
+
+    // Validate individual instruction constraints
+    instructions.forEach((instruction, index) => {
+      // Validate aggression levels
+      if (instruction.throw_aggression < 0 || instruction.throw_aggression > 100) {
+        errors.push(`Instruction ${index + 1}: Throw aggression must be between 0 and 100`);
+      }
+      if (instruction.catch_aggression < 0 || instruction.catch_aggression > 100) {
+        errors.push(`Instruction ${index + 1}: Catch aggression must be between 0 and 100`);
+      }
+
+      // Validate target priority
+      const validTargetPriorities = Object.values(TargetPriority);
+      if (!validTargetPriorities.includes(instruction.target_priority)) {
+        errors.push(`Instruction ${index + 1}: Invalid target priority`);
+      }
+    });
+
+    // Validate unique players
+    const uniquePlayers = new Set(instructions.map(i => i.player_id));
+    if (uniquePlayers.size !== instructions.length) {
+      errors.push('Each instruction must be for a unique player');
+    }
+
+    return { 
+      isValid: errors.length === 0, 
+      errors 
+    };
+  }
+
+  private async getNextFixtureId(game: Game, teamId: string, token: string): Promise<string> {
+    const fixtures = await getFixturesByMatchDay(game.id, game.season, game.match_day + 1, token);
+    if (!fixtures || fixtures.length === 0) {
+      throw new ApiError(404, 'No fixtures found for this game');
+    }
+    const fixture = fixtures.find(f => f.status === 'scheduled' && (f.home_team_id === teamId || f.away_team_id === teamId));
+    if (!fixture) {
+      throw new ApiError(404, 'No scheduled fixture found for this team');
+    }
+    return fixture.id;
   }
 }
 

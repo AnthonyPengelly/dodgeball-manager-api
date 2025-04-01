@@ -417,9 +417,17 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TargetPriority": {
+        "dataType": "refEnum",
+        "enums": ["highest_threat","weakest_defence","nearest","random"],
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PlayerState": {
         "dataType": "refObject",
         "properties": {
+            "throw_aggression": {"dataType":"double","required":true},
+            "catch_aggression": {"dataType":"double","required":true},
+            "target_priority": {"ref":"TargetPriority","required":true},
             "id": {"dataType":"string","required":true},
             "name": {"dataType":"string","required":true},
             "isHome": {"dataType":"boolean","required":true},
@@ -492,7 +500,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DeepPartial_PlayerState_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"position":{"dataType":"double"},"eliminated":{"dataType":"boolean"},"ballId":{"dataType":"double"},"id":{"dataType":"string"},"name":{"dataType":"string"},"isHome":{"dataType":"boolean"},"throwing":{"dataType":"double"},"catching":{"dataType":"double"},"dodging":{"dataType":"double"},"blocking":{"dataType":"double"},"speed":{"dataType":"double"},"positionalSense":{"dataType":"double"},"teamwork":{"dataType":"double"},"clutchFactor":{"dataType":"double"}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"position":{"dataType":"double"},"eliminated":{"dataType":"boolean"},"ballId":{"dataType":"double"},"id":{"dataType":"string"},"name":{"dataType":"string"},"isHome":{"dataType":"boolean"},"throwing":{"dataType":"double"},"catching":{"dataType":"double"},"dodging":{"dataType":"double"},"blocking":{"dataType":"double"},"speed":{"dataType":"double"},"positionalSense":{"dataType":"double"},"teamwork":{"dataType":"double"},"clutchFactor":{"dataType":"double"},"throw_aggression":{"dataType":"double"},"catch_aggression":{"dataType":"double"},"target_priority":{"ref":"TargetPriority"}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DeepPartial_Record_string.PlayerState__": {
@@ -609,6 +617,9 @@ const models: TsoaRoute.Models = {
     "MatchPlayer": {
         "dataType": "refObject",
         "properties": {
+            "throw_aggression": {"dataType":"double","required":true},
+            "catch_aggression": {"dataType":"double","required":true},
+            "target_priority": {"ref":"TargetPriority","required":true},
             "id": {"dataType":"string","required":true},
             "name": {"dataType":"string","required":true},
             "isHome": {"dataType":"boolean","required":true},
@@ -684,6 +695,49 @@ const models: TsoaRoute.Models = {
             "match_day": {"dataType":"double","required":true},
             "other_match": {"ref":"EnhancedFixture"},
             "simulated_match": {"ref":"MatchSimulationResponse"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SavePlayerinstructionsResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "success": {"dataType":"boolean","required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SavePlayerinstructionsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "fixture_id": {"dataType":"string"},
+            "players": {"dataType":"array","array":{"dataType":"nestedObjectLiteral","nestedProperties":{"target_priority":{"ref":"TargetPriority","required":true},"catch_aggression":{"dataType":"double","required":true},"throw_aggression":{"dataType":"double","required":true},"player_id":{"dataType":"string","required":true}}},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerInstructions": {
+        "dataType": "refObject",
+        "properties": {
+            "throw_aggression": {"dataType":"double","required":true},
+            "catch_aggression": {"dataType":"double","required":true},
+            "target_priority": {"ref":"TargetPriority","required":true},
+            "id": {"dataType":"string","required":true},
+            "fixture_id": {"dataType":"string","required":true},
+            "player_id": {"dataType":"string","required":true},
+            "created_at": {"dataType":"string"},
+            "updated_at": {"dataType":"string"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "GetPlayerinstructionsResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "success": {"dataType":"boolean","required":true},
+            "message": {"dataType":"string","required":true},
+            "player_instructions": {"dataType":"array","array":{"dataType":"refObject","ref":"PlayerInstructions"},"required":true},
         },
         "additionalProperties": false,
     },
@@ -1264,6 +1318,70 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'playNextMatch',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMatchController_savePlayerInstructions: Record<string, TsoaRoute.ParameterSchema> = {
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+                requestBody: {"in":"body","name":"requestBody","required":true,"ref":"SavePlayerinstructionsRequest"},
+        };
+        app.post('/api/matches/save-player-instructions',
+            authenticateMiddleware([{"bearerAuth":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MatchController)),
+            ...(fetchMiddlewares<RequestHandler>(MatchController.prototype.savePlayerInstructions)),
+
+            async function MatchController_savePlayerInstructions(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMatchController_savePlayerInstructions, request, response });
+
+                const controller = new MatchController();
+
+              await templateService.apiHandler({
+                methodName: 'savePlayerInstructions',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMatchController_getPlayerInstructions: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                fixtureId: {"in":"query","name":"fixtureId","dataType":"string"},
+        };
+        app.get('/api/matches/player-instructions',
+            authenticateMiddleware([{"bearerAuth":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MatchController)),
+            ...(fetchMiddlewares<RequestHandler>(MatchController.prototype.getPlayerInstructions)),
+
+            async function MatchController_getPlayerInstructions(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMatchController_getPlayerInstructions, request, response });
+
+                const controller = new MatchController();
+
+              await templateService.apiHandler({
+                methodName: 'getPlayerInstructions',
                 controller,
                 response,
                 next,
