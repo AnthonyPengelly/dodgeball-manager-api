@@ -13,7 +13,7 @@ export const makeActionDecision = (context: DecisionContext): PlayerDecision => 
   
   // Always throw if possible
   if (playerState.ballId !== null) {
-    const shouldThrow = Math.random() * 105 < playerState.throwing;
+    const shouldThrow = (Math.random() * 105) < playerState.throw_aggression;
     if (shouldThrow) {
       return {
         action: PlayerAction.THROW,

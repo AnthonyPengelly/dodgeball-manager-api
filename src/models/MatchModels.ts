@@ -55,7 +55,7 @@ export interface GetPlayerinstructionsResponse {
 
 // Tsoa doesn't like our complex DeepPartial mode, so replace it with Partial model for the API response
 export interface MatchSimulationResponse extends MatchSimulation {
-  game: TsoaGame;
+  games: TsoaGame[];
 }
 
 export interface TsoaGame extends Game {

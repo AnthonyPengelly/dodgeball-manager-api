@@ -2259,7 +2259,7 @@
 					},
 					"games": {
 						"items": {
-							"$ref": "#/components/schemas/Game"
+							"$ref": "#/components/schemas/TsoaGame"
 						},
 						"type": "array",
 						"description": "Individual games played in the match"
@@ -2267,9 +2267,6 @@
 					"initialMatchState": {
 						"$ref": "#/components/schemas/MatchState",
 						"description": "Initial state of the match before simulation. Use this to set up your match state object"
-					},
-					"game": {
-						"$ref": "#/components/schemas/TsoaGame"
 					}
 				},
 				"required": [
@@ -2279,8 +2276,7 @@
 					"awayScore",
 					"winner",
 					"games",
-					"initialMatchState",
-					"game"
+					"initialMatchState"
 				],
 				"type": "object",
 				"additionalProperties": false
