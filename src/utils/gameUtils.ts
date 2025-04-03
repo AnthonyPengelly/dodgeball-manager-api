@@ -19,7 +19,8 @@ export function formatGameResponse(team: TeamWithGame): CurrentGameResponse {
     game_status: game.status,
     game_stage: game.game_stage,
     team_id: team.id,
-    team_name: team.name
+    team_name: team.name,
+    budget: team.budget,
   };
 }
 

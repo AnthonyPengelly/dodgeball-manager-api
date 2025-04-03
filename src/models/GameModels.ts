@@ -61,6 +61,12 @@ export interface CurrentGameResponse {
    * @example "Dodgeball Dynamos" 
    */
   team_name: string;
+
+  /** 
+   * Team budget
+   * @example 100 
+   */
+  budget: number;
 }
 
 /**

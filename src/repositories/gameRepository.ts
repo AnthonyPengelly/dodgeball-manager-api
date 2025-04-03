@@ -18,6 +18,7 @@ export async function getCurrentGameForUser(userId: string, token: string): Prom
     .select(`
       id,
       name,
+      budget,
       games:game_id (
         id,
         season,
@@ -195,6 +196,8 @@ export async function getGameForUser(userId: string, gameId: string, token: stri
     .from('teams')
     .select(`
       id,
+      name,
+      budget,
       games:game_id (
         id,
         status

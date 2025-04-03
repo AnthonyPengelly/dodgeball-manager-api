@@ -30,6 +30,7 @@ export type GameStage = 'draft' | 'pre_season' | 'regular_season' | 'post_season
 export interface TeamWithGame {
   id: string;
   name: string;
+  budget: number;
   games: Game | Game[];
 }
 

@@ -2535,6 +2535,12 @@
 						"description": "Team name",
 						"example": "Dodgeball Dynamos"
 					},
+					"budget": {
+						"type": "number",
+						"format": "double",
+						"description": "Team budget",
+						"example": 100
+					},
 					"success": {
 						"type": "boolean",
 						"description": "Success status",
@@ -2554,6 +2560,7 @@
 					"game_stage",
 					"team_id",
 					"team_name",
+					"budget",
 					"success",
 					"message"
 				],

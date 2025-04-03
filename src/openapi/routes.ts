@@ -763,6 +763,7 @@ const models: TsoaRoute.Models = {
             "game_stage": {"ref":"GameStage","required":true},
             "team_id": {"dataType":"string","required":true},
             "team_name": {"dataType":"string","required":true},
+            "budget": {"dataType":"double","required":true},
             "success": {"dataType":"boolean","required":true},
             "message": {"dataType":"string","required":true},
         },
