@@ -17,8 +17,7 @@ export async function getScoutedPlayersForSeason(seasonId: string, token: string
       player:player_id (*),
       season:season_id (team_id)
     `)
-    .eq('season_id', seasonId)
-    .eq('is_purchased', false);
+    .eq('season_id', seasonId);
   
   if (error) {
     console.error('Error fetching scouted players:', error);
