@@ -53,7 +53,5 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team): MatchSimulation =
     match.winner = null; // Tie
   }
   
-  matchState.completed = true;
-  
   return match;
 };

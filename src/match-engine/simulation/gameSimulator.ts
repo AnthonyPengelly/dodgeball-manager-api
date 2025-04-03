@@ -52,7 +52,8 @@ export const simulateGame = (
   
   // Prepare state update for the match
   game.endGameMatchStateUpdate = {
-    currentGame: matchState.currentGame + 1,
+    currentGame: matchState.currentGame !== MATCH_CONSTANTS.GAMES_PER_MATCH ? matchState.currentGame + 1 : -1,
+    completed: matchState.currentGame === MATCH_CONSTANTS.GAMES_PER_MATCH,
   };
 
   // Update player counts
