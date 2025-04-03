@@ -77,6 +77,10 @@ export interface Player {
   
   created_at: string;
   updated_at: string;
+
+  // Price fields
+  buy_price: number;
+  sell_price: number;
 }
 
 export type PlayerStatus = 'draft' | 'team' | 'opponent' | 'scout' | 'transfer' | 'sold' | 'rejected';

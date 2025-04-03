@@ -90,6 +90,8 @@ export interface Turn {
   ballId?: number;
   /** Result of the player's action */
   actionResult?: ActionResult;
+  /** ID of the target player (for throws) */
+  targetPlayerId?: string;
   /** Partial updates to game state at turn end. This should be applied with a deep merge */
   endTurnGameStateUpdate: DeepPartial<GameState>;
 }

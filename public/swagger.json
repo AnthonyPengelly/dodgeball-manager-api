@@ -275,6 +275,14 @@
 					},
 					"updated_at": {
 						"type": "string"
+					},
+					"buy_price": {
+						"type": "number",
+						"format": "double"
+					},
+					"sell_price": {
+						"type": "number",
+						"format": "double"
 					}
 				},
 				"required": [
@@ -301,7 +309,9 @@
 					"tier",
 					"potential_tier",
 					"created_at",
-					"updated_at"
+					"updated_at",
+					"buy_price",
+					"sell_price"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1767,6 +1777,10 @@
 						"$ref": "#/components/schemas/ActionResult",
 						"description": "Result of the player's action"
 					},
+					"targetPlayerId": {
+						"type": "string",
+						"description": "ID of the target player (for throws)"
+					},
 					"endTurnGameStateUpdate": {
 						"$ref": "#/components/schemas/Partial_GameState_",
 						"description": "Partial updates to game state at turn end. This should be applied with a deep merge"
@@ -1816,6 +1830,10 @@
 					"actionResult": {
 						"$ref": "#/components/schemas/ActionResult",
 						"description": "Result of the player's action"
+					},
+					"targetPlayerId": {
+						"type": "string",
+						"description": "ID of the target player (for throws)"
 					},
 					"endTurnGameStateUpdate": {
 						"$ref": "#/components/schemas/DeepPartial_GameState_",

@@ -55,6 +55,7 @@ export const simulateTurn = (
         turn.ballId = targetBallId;
         
         if (decision.targetPlayerId) {
+          turn.targetPlayerId = decision.targetPlayerId;
           // Target player makes a reaction decision
           const targetPlayer = findPlayerById(decision.targetPlayerId, gameState);
           

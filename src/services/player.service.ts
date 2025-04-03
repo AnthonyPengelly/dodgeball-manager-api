@@ -5,6 +5,7 @@ import {
 import { PLAYER_STATUS } from '../utils/constants';
 import { ApiError } from '../middleware/error.middleware';
 import { GetSquadResponse } from '../models/PlayerModels';
+import { PlayerPriceCalculator } from '../utils/player-price-calculator';
 
 class PlayerService {
   /**
@@ -43,7 +44,11 @@ class PlayerService {
         throw new ApiError(500, 'Failed to get squad players');
       }
       
-      return { players: players as Player[] };
+      return { players: players.map(player => ({
+        ...player,
+        buy_price: PlayerPriceCalculator.calculateBuyPrice(player),
+        sell_price: PlayerPriceCalculator.calculateScoutPrice(player)
+      })) as Player[] };
     } catch (error) {
       console.error('PlayerService.getSquad error:', error);
       if (error instanceof ApiError) {
